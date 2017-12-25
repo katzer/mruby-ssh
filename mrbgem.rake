@@ -20,34 +20,43 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+def target_win32?
+  return true if ENV['OS'] == 'Windows_NT'
+  build.is_a?(MRuby::CrossBuild) && build.host_target.to_s =~ /mingw/
+end
+
 MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   spec.license = 'MIT'
   spec.authors = 'Sebastian Katzer'
   spec.summary = 'mruby bindings for libssh2'
 
-  spec.add_test_dependency 'mruby-print', core: 'mruby-print'
+  spec.cc.include_paths << "#{dir}/mbedtls/include"
+  spec.cc.include_paths += %W[#{dir}/ssh2/include #{dir}/ssh2/src]
 
-  target = build.name
-  target = RbConfig::CONFIG['target'] if target == 'host'
-  target = target[0..-3]              if target =~ /darwin/
-  target += '-glibc-2.12'             if target =~ /linux/ && target !~ /glibc/ && system(%(exit "$(readelf -V $(which ruby) | grep -c 'GLIBC_2.14')"))
-
-  libs = %w[ssh2 mbedtls mbedx509 mbedcrypto]
-  libs << 'z'          if target =~ /(musl|mingw32)/
-  libs << 'winpthread' if target == 'i686-w64-mingw32'
-  libs.map! { |lib| %("#{spec.dir}/lib/#{target}/lib#{lib}.a") }
-
-  case target
-  when /mingw/
-    build.linker.libraries << 'ws2_32'
-    build.linker.libraries << 'pthread' if target !~ /i686/
-  when /glibc/
-    build.linker.libraries << 'rt'
-  when /musl/
-    build.linker.libraries << 'pthread'
-  else
-    build.linker.libraries += %w[z pthread]
+  if target_win32?
+    spec.cc.include_paths << "#{dir}/ssh2/win32"
+    spec.linker.libraries << 'ws2_32'
   end
 
-  build.linker.link_options.sub!('{objs}', "{objs} #{libs.join(' ')}")
+  file "#{dir}/mbedtls" do
+    sh "curl -s https://tls.mbed.org/download/mbedtls-2.6.0-apache.tgz | tar xzC . && mv mbedtls-2.6.0 #{dir}/mbedtls"
+  end
+
+  file "#{dir}/ssh2" => "#{dir}/mbedtls" do
+    sh "curl -s https://www.libssh2.org/download/libssh2-1.8.0.tar.gz | tar xzC . && mv libssh2-1.8.0 #{dir}/ssh2"
+  end
+
+  file "#{dir}/ssh2/src/libssh2_config.h" => "#{dir}/ssh2" do
+    cp "#{dir}/libssh2_config.h", "#{dir}/ssh2/src/"
+  end
+
+  Rake::Task["#{dir}/ssh2/src/libssh2_config.h"].invoke
+
+  spec.objs += Dir["#{dir}/mbedtls/library/*.c"].map! do |f|
+    f.relative_path_from(dir).pathmap("#{build_dir}/%X.o")
+  end
+
+  spec.objs += Dir["#{dir}/ssh2/src/*.c"].map! do |f|
+    f.relative_path_from(dir).pathmap("#{build_dir}/%X.o")
+  end
 end
