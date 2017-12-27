@@ -27,25 +27,24 @@ environment:
     TOOLCHAIN: gcc
   matrix:
   - MRUBY_VERSION: 1.3.0
-    COMPILER: C:\MinGW
+    COMPILER: C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32
+    CYGWIN: C:\cygwin
   - MRUBY_VERSION: 1.3.0
-    COMPILER: C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0
-  - MRUBY_VERSION: 1.3.0
-    COMPILER: C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1
+    COMPILER: C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1\mingw64
+    CYGWIN: C:\cygwin64
   - MRUBY_VERSION: head
-    COMPILER: C:\MinGW
+    COMPILER: C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32
+    CYGWIN: C:\cygwin
   - MRUBY_VERSION: head
-    COMPILER: C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0
-  - MRUBY_VERSION: head
-    COMPILER: C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1
+    COMPILER: C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1\mingw64
+    CYGWIN: C:\cygwin64
 
 matrix:
   allow_failures:
   - MRUBY_VERSION: head
 
 init:
-- SET PATH=C:\Windows\system32;C:\Windows;C:\Program Files\Git\cmd;%PATH%
-- SET PATH=%COMPILER%\bin;C:\Ruby24-x64\bin;%PATH%;C:\cygwin\bin;
+- SET PATH=%COMPILER%\bin;C:\Ruby24-x64\bin;%PATH%;%CYGWIN%\bin
 - gcc --version
 
 build_script:
