@@ -404,6 +404,10 @@ mrb_ssh_f_last_errno (mrb_state *mrb, mrb_value self)
 
     err = libssh2_session_last_errno(session->ssh_session);
 
+    if (err == LIBSSH2_ERROR_SFTP_PROTOCOL && session->sftp_session) {
+        err = libssh2_sftp_last_error(session->sftp_session);
+    }
+
     return mrb_fixnum_value(err);
 }
 
@@ -454,6 +458,24 @@ mrb_mruby_ssh_gem_init (mrb_state *mrb)
 
     mrb_define_alias(mrb, ftp, "ls", "list");
     mrb_define_alias(mrb, ftp, "dir", "list");
+
+    mrb_define_const(mrb, ftp, "TIMEOUT_ERROR",        mrb_fixnum_value(LIBSSH2_ERROR_TIMEOUT));
+    mrb_define_const(mrb, ftp, "DISCONNECT_ERROR",     mrb_fixnum_value(LIBSSH2_ERROR_SOCKET_DISCONNECT));
+    mrb_define_const(mrb, ftp, "AUTHENTICATION_ERROR", mrb_fixnum_value(LIBSSH2_ERROR_AUTHENTICATION_FAILED));
+    mrb_define_const(mrb, ftp, "NO_SUCH_FILE_ERROR",   mrb_fixnum_value(LIBSSH2_FX_NO_SUCH_FILE));
+    mrb_define_const(mrb, ftp, "NO_SUCH_PATH_ERROR",   mrb_fixnum_value(LIBSSH2_FX_NO_SUCH_PATH));
+    mrb_define_const(mrb, ftp, "PERMISSION_ERROR",     mrb_fixnum_value(LIBSSH2_FX_PERMISSION_DENIED));
+    mrb_define_const(mrb, ftp, "FILE_EXIST_ERROR",     mrb_fixnum_value(LIBSSH2_FX_FILE_ALREADY_EXISTS));
+    mrb_define_const(mrb, ftp, "WRITE_PROTECT_ERROR",  mrb_fixnum_value(LIBSSH2_FX_WRITE_PROTECT));
+    mrb_define_const(mrb, ftp, "WRITE_PROTECT_ERROR",  mrb_fixnum_value(LIBSSH2_FX_WRITE_PROTECT));
+    mrb_define_const(mrb, ftp, "OUT_OF_SPACE_ERROR",   mrb_fixnum_value(LIBSSH2_FX_NO_SPACE_ON_FILESYSTEM));
+    mrb_define_const(mrb, ftp, "OUT_OF_SPACE_ERROR",   mrb_fixnum_value(LIBSSH2_FX_NO_SPACE_ON_FILESYSTEM));
+    mrb_define_const(mrb, ftp, "DIR_NOT_EMPTY_ERROR",  mrb_fixnum_value(LIBSSH2_FX_DIR_NOT_EMPTY));
+    mrb_define_const(mrb, ftp, "NOT_A_DIR_ERROR",      mrb_fixnum_value(LIBSSH2_FX_NOT_A_DIRECTORY));
+    mrb_define_const(mrb, ftp, "INVALID_NAME_ERROR",   mrb_fixnum_value(LIBSSH2_FX_INVALID_FILENAME));
+    mrb_define_const(mrb, ftp, "LINK_LOOP_ERROR",      mrb_fixnum_value(LIBSSH2_FX_LINK_LOOP));
+    mrb_define_const(mrb, ftp, "NO_CONNECTION_ERROR",  mrb_fixnum_value(LIBSSH2_FX_NO_CONNECTION));
+    mrb_define_const(mrb, ftp, "EOF",                  mrb_fixnum_value(LIBSSH2_FX_EOF));
 }
 
 void
