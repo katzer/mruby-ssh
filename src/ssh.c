@@ -45,12 +45,14 @@
 #include "mruby/error.h"
 #include "mruby/variable.h"
 
-struct sftp_session
+struct _SFTP_SESSION
 {
     LIBSSH2_SESSION *ssh_session;
     LIBSSH2_SFTP    *sftp_session;
     int sock;
 };
+
+typedef struct _SFTP_SESSION SFTP_SESSION;
 
 static char *
 mrb_ssh_host_to_ai_addr (int family, const char *host)
@@ -153,7 +155,7 @@ mrb_sftp_get_handle (mrb_state *mrb, mrb_value self, char **path, int *path_len)
     mrb_bool dir_given;
     char *dir;
 
-    struct sftp_session *session = DATA_PTR(self);
+    SFTP_SESSION *session = DATA_PTR(self);
     LIBSSH2_SFTP *sftp_session;
     LIBSSH2_SFTP_HANDLE *sftp_handle;
 
@@ -212,7 +214,7 @@ mrb_sftp_f_connect (mrb_state *mrb, mrb_value self)
     mrb_int port, host_len, argc;
     char* host;
 
-    struct sftp_session *session;
+    SFTP_SESSION *session;
     LIBSSH2_SESSION *ssh_session;
     int sock;
 
@@ -226,7 +228,7 @@ mrb_sftp_f_connect (mrb_state *mrb, mrb_value self)
         mrb_raise(mrb, E_RUNTIME_ERROR, "Could not init ssh session.");
     }
 
-    session               = malloc(sizeof(struct sftp_session));
+    session               = malloc(sizeof(SFTP_SESSION));
     session->ssh_session  = ssh_session;
     session->sftp_session = NULL;
     session->sock         = sock;
@@ -241,7 +243,7 @@ mrb_sftp_f_connect (mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_sftp_f_close (mrb_state *mrb, mrb_value self)
 {
-    struct sftp_session *session = DATA_PTR(self);
+    SFTP_SESSION *session = DATA_PTR(self);
 
     if (!session)
         return mrb_nil_value();
@@ -262,14 +264,14 @@ mrb_sftp_f_close (mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_sftp_f_closed (mrb_state *mrb, mrb_value self)
 {
-    struct sftp_session *session = DATA_PTR(self);
+    SFTP_SESSION *session = DATA_PTR(self);
     return session ? mrb_false_value() : mrb_true_value();
 }
 
 static mrb_value
 mrb_sftp_f_logged (mrb_state *mrb, mrb_value self)
 {
-    struct sftp_session *session = DATA_PTR(self);
+    SFTP_SESSION *session = DATA_PTR(self);
 
     if (session && libssh2_userauth_authenticated(session->ssh_session))
         return mrb_true_value();
@@ -284,7 +286,7 @@ mrb_sftp_f_login (mrb_state *mrb, mrb_value self)
     mrb_bool user_given, pass_given;
     char *user, *pass;
 
-    struct sftp_session *session = DATA_PTR(self);
+    SFTP_SESSION *session = DATA_PTR(self);
     LIBSSH2_SESSION *ssh_session;
 
     if (!session) {
@@ -397,7 +399,7 @@ mrb_sftp_f_entries (mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_ssh_f_last_errno (mrb_state *mrb, mrb_value self)
 {
-    struct sftp_session *session = DATA_PTR(self);
+    SFTP_SESSION *session = DATA_PTR(self);
     int err;
 
     if (!session) return mrb_nil_value();
@@ -414,7 +416,7 @@ mrb_ssh_f_last_errno (mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_ssh_f_last_error (mrb_state *mrb, mrb_value self)
 {
-    struct sftp_session *session = DATA_PTR(self);
+    SFTP_SESSION *session = DATA_PTR(self);
     char *msg;
     int err, len;
 
