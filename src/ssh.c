@@ -148,26 +148,28 @@ mrb_ssh_close_session (LIBSSH2_SESSION **session)
     libssh2_session_free(*session);
 }
 
-static LIBSSH2_SFTP_HANDLE*
-mrb_sftp_get_handle (mrb_state *mrb, mrb_value self, char **path, int *path_len)
+static void
+mrb_sftp_raise_if_not_authenticated (mrb_state *mrb, mrb_value self)
 {
-    mrb_int dir_len, argc;
-    mrb_bool dir_given;
-    char *dir;
-
     SFTP_SESSION *session = DATA_PTR(self);
-    LIBSSH2_SFTP *sftp_session;
-    LIBSSH2_SFTP_HANDLE *sftp_handle;
 
     if (!session) {
         mrb_raise(mrb, E_RUNTIME_ERROR, "Session not connected.");
     }
 
-    sftp_session = session->sftp_session;
-
-    if (!sftp_session) {
+    if (!session->sftp_session) {
         mrb_raise(mrb, E_RUNTIME_ERROR, "Session not authenticated.");
     }
+
+    return;
+}
+
+static char*
+mrb_sftp_get_path(mrb_state *mrb, mrb_value self, int *path_len)
+{
+    mrb_int dir_len, argc;
+    mrb_bool dir_given;
+    char *dir;
 
     mrb_get_args(mrb, "|s?", &dir, &dir_len, &dir_given, &argc);
 
@@ -180,17 +182,35 @@ mrb_sftp_get_handle (mrb_state *mrb, mrb_value self, char **path, int *path_len)
         dir[--dir_len] = 0;
     }
 
-    sftp_handle = libssh2_sftp_opendir(sftp_session, dir);
+    if (path_len) {
+        *path_len = dir_len;
+    }
+
+    return dir;
+}
+
+static LIBSSH2_SFTP_HANDLE*
+mrb_sftp_get_handle (mrb_state *mrb, mrb_value self, char **path, int *path_len)
+{
+    char *dir;
+
+    SFTP_SESSION *session = DATA_PTR(self);
+    LIBSSH2_SFTP *sftp_session;
+    LIBSSH2_SFTP_HANDLE *sftp_handle;
+
+    mrb_sftp_raise_if_not_authenticated(mrb, self);
+
+    dir          = mrb_sftp_get_path(mrb, self, path_len);
+    sftp_session = session->sftp_session;
+    sftp_handle  = libssh2_sftp_opendir(sftp_session, dir);
 
     if (!sftp_handle) {
         mrb_raise(mrb, E_RUNTIME_ERROR, "The system cannot find the dir specified.");
     }
 
-    if (path)
+    if (path) {
         *path = dir;
-
-    if (path_len)
-        *path_len = dir_len;
+    }
 
     return sftp_handle;
 }
@@ -397,6 +417,29 @@ mrb_sftp_f_entries (mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
+mrb_sftp_f_mtime (mrb_state *mrb, mrb_value self)
+{
+    SFTP_SESSION *session = DATA_PTR(self);
+    LIBSSH2_SFTP *sftp_session;
+    LIBSSH2_SFTP_ATTRIBUTES attrs;
+    char *path;
+    int path_len;
+
+    mrb_sftp_raise_if_not_authenticated(mrb, self);
+
+    path         = mrb_sftp_get_path(mrb, self, &path_len);
+    sftp_session = session->sftp_session;
+
+    libssh2_sftp_stat_ex(sftp_session, path, path_len, LIBSSH2_SFTP_STAT, &attrs);
+
+    if (attrs.flags & LIBSSH2_SFTP_ATTR_ACMODTIME) {
+        return mrb_fixnum_value(attrs.mtime);
+    }
+
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Unable to get status about the file or dir.");
+}
+
+static mrb_value
 mrb_ssh_f_last_errno (mrb_state *mrb, mrb_value self)
 {
     SFTP_SESSION *session = DATA_PTR(self);
@@ -453,6 +496,7 @@ mrb_mruby_ssh_gem_init (mrb_state *mrb)
     mrb_define_method(mrb, ftp, "logged_in?", mrb_sftp_f_logged, MRB_ARGS_NONE());
     mrb_define_method(mrb, ftp, "list",    mrb_sftp_f_list,    MRB_ARGS_OPT(1));
     mrb_define_method(mrb, ftp, "entries", mrb_sftp_f_entries, MRB_ARGS_OPT(1));
+    mrb_define_method(mrb, ftp, "mtime",   mrb_sftp_f_mtime,   MRB_ARGS_OPT(1));
     mrb_define_method(mrb, ftp, "close",   mrb_sftp_f_close,   MRB_ARGS_NONE());
     mrb_define_method(mrb, ftp, "closed?", mrb_sftp_f_closed,  MRB_ARGS_NONE());
     mrb_define_method(mrb, ftp, "last_error", mrb_ssh_f_last_error, MRB_ARGS_NONE());

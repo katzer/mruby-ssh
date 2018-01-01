@@ -30,6 +30,8 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   spec.authors = 'Sebastian Katzer'
   spec.summary = 'mruby bindings for libssh2'
 
+  spec.add_test_dependency 'mruby-print', core: 'mruby-print'
+
   spec.cc.include_paths << "#{dir}/mbedtls/include"
   spec.cc.include_paths += %W[#{dir}/ssh2/include #{dir}/ssh2/src]
 

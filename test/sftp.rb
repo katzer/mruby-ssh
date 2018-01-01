@@ -163,3 +163,15 @@ assert 'SFTP#last_errno' do
     assert_not_equal 0,     ftp.last_errno
   end
 end
+
+assert 'SFTP#mtime' do
+  SFTP.open('test.rebex.net') do |ftp|
+    assert_raise(RuntimeError) { ftp.mtime 'pub/example' }
+
+    ftp.login('demo', 'password')
+    mtime = ftp.mtime 'pub/example'
+
+    assert_kind_of Integer, mtime
+    assert_true mtime > 0
+  end
+end
