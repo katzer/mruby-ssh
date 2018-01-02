@@ -55,7 +55,7 @@ struct _SFTP_SESSION
 typedef struct _SFTP_SESSION SFTP_SESSION;
 
 static char *
-mrb_ssh_host_to_ai_addr (int family, const char *host)
+host_to_ai_addr (int family, const char *host)
 {
     struct addrinfo *res, *rp;
     struct addrinfo hints;
@@ -87,7 +87,7 @@ mrb_ssh_host_to_ai_addr (int family, const char *host)
 }
 
 static int
-mrb_ssh_init_socket (int family, const char *host, int port, int *ptr)
+init_socket (int family, const char *host, int port, int *ptr)
 {
     struct sockaddr_in sin;
     int sock, rc;
@@ -98,7 +98,7 @@ mrb_ssh_init_socket (int family, const char *host, int port, int *ptr)
     sin.sin_family = family;
     sin.sin_port   = htons(port);
 
-    ip = mrb_ssh_host_to_ai_addr(family, host);
+    ip = host_to_ai_addr(family, host);
     inet_pton(family, ip, &(sin.sin_addr));
     free(ip);
 
@@ -112,7 +112,7 @@ mrb_ssh_init_socket (int family, const char *host, int port, int *ptr)
 }
 
 static void
-mrb_ssh_close_socket (int sock) {
+close_socket (int sock) {
 #ifdef WIN32
     closesocket(sock);
 #else
@@ -121,7 +121,7 @@ mrb_ssh_close_socket (int sock) {
 }
 
 static int
-mrb_ssh_init_session (int sock, LIBSSH2_SESSION **ptr)
+init_session (int sock, LIBSSH2_SESSION **ptr)
 {
     LIBSSH2_SESSION *session;
     int rc;
@@ -142,14 +142,14 @@ mrb_ssh_init_session (int sock, LIBSSH2_SESSION **ptr)
 }
 
 static void
-mrb_ssh_close_session (LIBSSH2_SESSION **session)
+close_session (LIBSSH2_SESSION **session)
 {
     libssh2_session_disconnect(*session, NULL);
     libssh2_session_free(*session);
 }
 
 static void
-mrb_sftp_raise_if_not_authenticated (mrb_state *mrb, mrb_value self)
+raise_if_not_authenticated (mrb_state *mrb, mrb_value self)
 {
     SFTP_SESSION *session = DATA_PTR(self);
 
@@ -165,7 +165,7 @@ mrb_sftp_raise_if_not_authenticated (mrb_state *mrb, mrb_value self)
 }
 
 static char*
-mrb_sftp_get_path(mrb_state *mrb, mrb_value self, int *path_len)
+get_path(mrb_state *mrb, mrb_value self, int *path_len)
 {
     mrb_int dir_len, argc;
     mrb_bool dir_given;
@@ -190,7 +190,7 @@ mrb_sftp_get_path(mrb_state *mrb, mrb_value self, int *path_len)
 }
 
 static LIBSSH2_SFTP_HANDLE*
-mrb_sftp_get_handle (mrb_state *mrb, mrb_value self, char **path, int *path_len)
+get_handle (mrb_state *mrb, mrb_value self, char **path, int *path_len)
 {
     char *dir;
 
@@ -198,9 +198,9 @@ mrb_sftp_get_handle (mrb_state *mrb, mrb_value self, char **path, int *path_len)
     LIBSSH2_SFTP *sftp_session;
     LIBSSH2_SFTP_HANDLE *sftp_handle;
 
-    mrb_sftp_raise_if_not_authenticated(mrb, self);
+    raise_if_not_authenticated(mrb, self);
 
-    dir          = mrb_sftp_get_path(mrb, self, path_len);
+    dir          = get_path(mrb, self, path_len);
     sftp_session = session->sftp_session;
     sftp_handle  = libssh2_sftp_opendir(sftp_session, dir);
 
@@ -216,7 +216,7 @@ mrb_sftp_get_handle (mrb_state *mrb, mrb_value self, char **path, int *path_len)
 }
 
 static LIBSSH2_SFTP_ATTRIBUTES
-mrb_sftp_get_attrs (mrb_state *mrb, mrb_value self, int type)
+get_attrs (mrb_state *mrb, mrb_value self, int type)
 {
     int path_len;
     SFTP_SESSION *session = DATA_PTR(self);
@@ -224,9 +224,9 @@ mrb_sftp_get_attrs (mrb_state *mrb, mrb_value self, int type)
     LIBSSH2_SFTP_ATTRIBUTES attrs;
     char *path;
 
-    mrb_sftp_raise_if_not_authenticated(mrb, self);
+    raise_if_not_authenticated(mrb, self);
 
-    path         = mrb_sftp_get_path(mrb, self, &path_len);
+    path         = get_path(mrb, self, &path_len);
     sftp_session = session->sftp_session;
 
     libssh2_sftp_stat_ex(session->sftp_session, path, path_len, type, &attrs);
@@ -235,7 +235,7 @@ mrb_sftp_get_attrs (mrb_state *mrb, mrb_value self, int type)
 }
 
 static int
-mrb_sftp_join_path (char *buf, char *pref, int pref_len, char *path)
+join_path (char *buf, char *pref, int pref_len, char *path)
 {
     if (pref_len == 0) {
         return sprintf(buf, "%s", path);
@@ -259,11 +259,11 @@ mrb_sftp_f_connect (mrb_state *mrb, mrb_value self)
 
     mrb_get_args(mrb, "si", &host, &host_len, &port, &argc);
 
-    if (mrb_ssh_init_socket(AF_INET, host, port, &sock) != 0) {
+    if (init_socket(AF_INET, host, port, &sock) != 0) {
         mrb_raise(mrb, E_RUNTIME_ERROR, "Failed to connect.");
     }
 
-    if (mrb_ssh_init_session(sock, &ssh_session) != 0) {
+    if (init_session(sock, &ssh_session) != 0) {
         mrb_raise(mrb, E_RUNTIME_ERROR, "Could not init ssh session.");
     }
 
@@ -288,8 +288,8 @@ mrb_sftp_f_close (mrb_state *mrb, mrb_value self)
         return mrb_nil_value();
 
     libssh2_sftp_shutdown(session->sftp_session);
-    mrb_ssh_close_session(&session->ssh_session);
-    mrb_ssh_close_socket(session->sock);
+    close_session(&session->ssh_session);
+    close_socket(session->sock);
     free(session);
 
     DATA_PTR(self) = NULL;
@@ -371,7 +371,7 @@ mrb_sftp_f_list (mrb_state *mrb, mrb_value self)
     LIBSSH2_SFTP_HANDLE *handle;
     mrb_value entries;
 
-    handle  = mrb_sftp_get_handle(mrb, self, NULL, NULL);
+    handle  = get_handle(mrb, self, NULL, NULL);
     entries = mrb_ary_new(mrb);
 
     do {
@@ -406,7 +406,7 @@ mrb_sftp_f_entries (mrb_state *mrb, mrb_value self)
     mrb_value entries;
     LIBSSH2_SFTP_HANDLE *handle;
 
-    handle  = mrb_sftp_get_handle(mrb, self, &dir, &dir_len);
+    handle  = get_handle(mrb, self, &dir, &dir_len);
     entries = mrb_ary_new(mrb);
 
     do {
@@ -425,7 +425,7 @@ mrb_sftp_f_entries (mrb_state *mrb, mrb_value self)
             continue;
 
         char path[mem_len + 1 + dir_len];
-        path_len = mrb_sftp_join_path(path, dir, dir_len, mem);
+        path_len = join_path(path, dir, dir_len, mem);
 
         mrb_ary_push(mrb, entries, mrb_str_new(mrb, path, path_len));
     } while (1);
@@ -439,7 +439,7 @@ static mrb_value
 mrb_sftp_f_mtime (mrb_state *mrb, mrb_value self)
 {
     LIBSSH2_SFTP_ATTRIBUTES attrs;
-    attrs = mrb_sftp_get_attrs(mrb, self, LIBSSH2_SFTP_STAT);
+    attrs = get_attrs(mrb, self, LIBSSH2_SFTP_STAT);
 
     if (attrs.flags & LIBSSH2_SFTP_ATTR_ACMODTIME) {
         return mrb_fixnum_value(attrs.mtime);
@@ -452,7 +452,7 @@ static mrb_value
 mrb_sftp_f_atime (mrb_state *mrb, mrb_value self)
 {
     LIBSSH2_SFTP_ATTRIBUTES attrs;
-    attrs = mrb_sftp_get_attrs(mrb, self, LIBSSH2_SFTP_STAT);
+    attrs = get_attrs(mrb, self, LIBSSH2_SFTP_STAT);
 
     if (attrs.flags & LIBSSH2_SFTP_ATTR_ACMODTIME) {
         return mrb_fixnum_value(attrs.atime);
@@ -462,7 +462,7 @@ mrb_sftp_f_atime (mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
-mrb_ssh_f_last_errno (mrb_state *mrb, mrb_value self)
+mrb_sftp_f_last_errno (mrb_state *mrb, mrb_value self)
 {
     SFTP_SESSION *session = DATA_PTR(self);
     int err;
@@ -523,7 +523,7 @@ mrb_mruby_ssh_gem_init (mrb_state *mrb)
     mrb_define_method(mrb, ftp, "close",   mrb_sftp_f_close,   MRB_ARGS_NONE());
     mrb_define_method(mrb, ftp, "closed?", mrb_sftp_f_closed,  MRB_ARGS_NONE());
     mrb_define_method(mrb, ftp, "last_error", mrb_ssh_f_last_error, MRB_ARGS_NONE());
-    mrb_define_method(mrb, ftp, "last_errno", mrb_ssh_f_last_errno, MRB_ARGS_NONE());
+    mrb_define_method(mrb, ftp, "last_errno", mrb_sftp_f_last_errno, MRB_ARGS_NONE());
 
     mrb_define_alias(mrb, ftp, "ls", "list");
     mrb_define_alias(mrb, ftp, "dir", "list");
