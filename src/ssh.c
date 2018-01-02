@@ -174,7 +174,7 @@ get_path(mrb_state *mrb, mrb_value self, int *path_len)
     mrb_get_args(mrb, "|s?", &dir, &dir_len, &dir_given, &argc);
 
     if (!dir_given) {
-        dir     = "";
+        dir     = (char *)"";
         dir_len = 0;
     }
 
@@ -337,7 +337,7 @@ mrb_sftp_f_login (mrb_state *mrb, mrb_value self)
     mrb_get_args(mrb, "|s?s?", &user, &user_len, &user_given, &pass, &pass_len, &pass_given, &argc);
 
     if (!user_given) {
-        user     = "anonymus";
+        user     = (char *)"anonymus";
         user_len = 8;
     }
 
@@ -499,10 +499,6 @@ mrb_mruby_ssh_gem_init (mrb_state *mrb)
 {
     struct RClass *ftp;
 
-    if (libssh2_init(0) != 0) {
-        mrb_raise(mrb, E_RUNTIME_ERROR, "libssh2_init failed");
-    }
-
 #ifdef _WIN32
     WSADATA wsaData;
 
@@ -510,6 +506,10 @@ mrb_mruby_ssh_gem_init (mrb_state *mrb)
         mrb_raise(mrb, E_RUNTIME_ERROR, "WSAStartup failed");
     }
 #endif
+
+    if (libssh2_init(0) != 0) {
+        mrb_raise(mrb, E_RUNTIME_ERROR, "libssh2_init failed");
+    }
 
     ftp = mrb_define_class(mrb, "SFTP", mrb->object_class);
 
