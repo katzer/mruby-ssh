@@ -215,6 +215,25 @@ mrb_sftp_get_handle (mrb_state *mrb, mrb_value self, char **path, int *path_len)
     return sftp_handle;
 }
 
+static LIBSSH2_SFTP_ATTRIBUTES
+mrb_sftp_get_attrs (mrb_state *mrb, mrb_value self, int type)
+{
+    int path_len;
+    SFTP_SESSION *session = DATA_PTR(self);
+    LIBSSH2_SFTP *sftp_session;
+    LIBSSH2_SFTP_ATTRIBUTES attrs;
+    char *path;
+
+    mrb_sftp_raise_if_not_authenticated(mrb, self);
+
+    path         = mrb_sftp_get_path(mrb, self, &path_len);
+    sftp_session = session->sftp_session;
+
+    libssh2_sftp_stat_ex(session->sftp_session, path, path_len, type, &attrs);
+
+    return attrs;
+}
+
 static int
 mrb_sftp_join_path (char *buf, char *pref, int pref_len, char *path)
 {
@@ -419,24 +438,27 @@ mrb_sftp_f_entries (mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_sftp_f_mtime (mrb_state *mrb, mrb_value self)
 {
-    SFTP_SESSION *session = DATA_PTR(self);
-    LIBSSH2_SFTP *sftp_session;
     LIBSSH2_SFTP_ATTRIBUTES attrs;
-    char *path;
-    int path_len;
-
-    mrb_sftp_raise_if_not_authenticated(mrb, self);
-
-    path         = mrb_sftp_get_path(mrb, self, &path_len);
-    sftp_session = session->sftp_session;
-
-    libssh2_sftp_stat_ex(sftp_session, path, path_len, LIBSSH2_SFTP_STAT, &attrs);
+    attrs = mrb_sftp_get_attrs(mrb, self, LIBSSH2_SFTP_STAT);
 
     if (attrs.flags & LIBSSH2_SFTP_ATTR_ACMODTIME) {
         return mrb_fixnum_value(attrs.mtime);
     }
 
-    mrb_raise(mrb, E_RUNTIME_ERROR, "Unable to get status about the file or dir.");
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Unable to get status about the file.");
+}
+
+static mrb_value
+mrb_sftp_f_atime (mrb_state *mrb, mrb_value self)
+{
+    LIBSSH2_SFTP_ATTRIBUTES attrs;
+    attrs = mrb_sftp_get_attrs(mrb, self, LIBSSH2_SFTP_STAT);
+
+    if (attrs.flags & LIBSSH2_SFTP_ATTR_ACMODTIME) {
+        return mrb_fixnum_value(attrs.atime);
+    }
+
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Unable to get status about the file.");
 }
 
 static mrb_value
@@ -497,6 +519,7 @@ mrb_mruby_ssh_gem_init (mrb_state *mrb)
     mrb_define_method(mrb, ftp, "list",    mrb_sftp_f_list,    MRB_ARGS_OPT(1));
     mrb_define_method(mrb, ftp, "entries", mrb_sftp_f_entries, MRB_ARGS_OPT(1));
     mrb_define_method(mrb, ftp, "mtime",   mrb_sftp_f_mtime,   MRB_ARGS_OPT(1));
+    mrb_define_method(mrb, ftp, "atime",   mrb_sftp_f_atime,   MRB_ARGS_OPT(1));
     mrb_define_method(mrb, ftp, "close",   mrb_sftp_f_close,   MRB_ARGS_NONE());
     mrb_define_method(mrb, ftp, "closed?", mrb_sftp_f_closed,  MRB_ARGS_NONE());
     mrb_define_method(mrb, ftp, "last_error", mrb_ssh_f_last_error, MRB_ARGS_NONE());
