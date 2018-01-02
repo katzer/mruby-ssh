@@ -166,9 +166,11 @@ end
 
 assert 'SFTP#mtime' do
   SFTP.open('test.rebex.net') do |ftp|
-    assert_raise(RuntimeError) { ftp.mtime 'pub/example' }
-
     ftp.login('demo', 'password')
+
+    assert_raise(ArgumentError) { ftp.mtime }
+    assert_raise(RuntimeError)  { ftp.mtime 'invalid path' }
+
     mtime = ftp.mtime 'pub/example'
 
     assert_kind_of Integer, mtime
@@ -178,9 +180,11 @@ end
 
 assert 'SFTP#atime' do
   SFTP.open('test.rebex.net') do |ftp|
-    assert_raise(RuntimeError) { ftp.atime 'pub/example' }
-
     ftp.login('demo', 'password')
+
+    assert_raise(ArgumentError) { ftp.atime }
+    assert_raise(RuntimeError)  { ftp.atime 'invalid path' }
+
     atime = ftp.atime 'pub/example'
 
     assert_kind_of Integer, atime

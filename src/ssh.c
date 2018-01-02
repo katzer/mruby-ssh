@@ -165,13 +165,17 @@ raise_if_not_authenticated (mrb_state *mrb, mrb_value self)
 }
 
 static char*
-get_path(mrb_state *mrb, mrb_value self, int *path_len)
+get_path_ex(mrb_state *mrb, mrb_value self, int *path_len, int opt_path)
 {
-    mrb_int dir_len, argc;
+    mrb_int dir_len;
     mrb_bool dir_given;
     char *dir;
 
-    mrb_get_args(mrb, "|s?", &dir, &dir_len, &dir_given, &argc);
+    if (opt_path == 1) {
+        mrb_get_args(mrb, "|s?", &dir, &dir_len, &dir_given);
+    } else {
+        mrb_get_args(mrb, "s?", &dir, &dir_len, &dir_given);
+    }
 
     if (!dir_given) {
         dir     = (char *)"";
@@ -189,11 +193,16 @@ get_path(mrb_state *mrb, mrb_value self, int *path_len)
     return dir;
 }
 
+static char*
+get_path(mrb_state *mrb, mrb_value self, int *path_len)
+{
+    return get_path_ex(mrb, self, path_len, 1);
+}
+
 static LIBSSH2_SFTP_HANDLE*
 get_handle (mrb_state *mrb, mrb_value self, char **path, int *path_len)
 {
     char *dir;
-
     SFTP_SESSION *session = DATA_PTR(self);
     LIBSSH2_SFTP *sftp_session;
     LIBSSH2_SFTP_HANDLE *sftp_handle;
@@ -224,10 +233,11 @@ get_attrs (mrb_state *mrb, mrb_value self, int type)
     char *path;
 
     raise_if_not_authenticated(mrb, self);
+    path = get_path_ex(mrb, self, &path_len, 0);
 
-    path = get_path(mrb, self, &path_len);
-
-    libssh2_sftp_stat_ex(session->sftp_session, path, path_len, type, &attrs);
+    if (libssh2_sftp_stat_ex(session->sftp_session, path, path_len, type, &attrs) < 0) {
+        mrb_raise(mrb, E_RUNTIME_ERROR, "Unable to get status about the file.");
+    }
 
     return attrs;
 }
@@ -248,14 +258,14 @@ join_path (char *buf, char *pref, int pref_len, char *path)
 static mrb_value
 mrb_sftp_f_connect (mrb_state *mrb, mrb_value self)
 {
-    mrb_int port, host_len, argc;
+    mrb_int port, host_len;
     char* host;
 
     SFTP_SESSION *session;
     LIBSSH2_SESSION *ssh_session;
     int sock;
 
-    mrb_get_args(mrb, "si", &host, &host_len, &port, &argc);
+    mrb_get_args(mrb, "si", &host, &host_len, &port);
 
     if (init_socket(AF_INET, host, port, &sock) != 0) {
         mrb_raise(mrb, E_RUNTIME_ERROR, "Failed to connect.");
@@ -516,8 +526,8 @@ mrb_mruby_ssh_gem_init (mrb_state *mrb)
     mrb_define_method(mrb, ftp, "logged_in?", mrb_sftp_f_logged, MRB_ARGS_NONE());
     mrb_define_method(mrb, ftp, "list",    mrb_sftp_f_list,    MRB_ARGS_OPT(1));
     mrb_define_method(mrb, ftp, "entries", mrb_sftp_f_entries, MRB_ARGS_OPT(1));
-    mrb_define_method(mrb, ftp, "mtime",   mrb_sftp_f_mtime,   MRB_ARGS_OPT(1));
-    mrb_define_method(mrb, ftp, "atime",   mrb_sftp_f_atime,   MRB_ARGS_OPT(1));
+    mrb_define_method(mrb, ftp, "mtime",   mrb_sftp_f_mtime,   MRB_ARGS_REQ(1));
+    mrb_define_method(mrb, ftp, "atime",   mrb_sftp_f_atime,   MRB_ARGS_REQ(1));
     mrb_define_method(mrb, ftp, "close",   mrb_sftp_f_close,   MRB_ARGS_NONE());
     mrb_define_method(mrb, ftp, "closed?", mrb_sftp_f_closed,  MRB_ARGS_NONE());
     mrb_define_method(mrb, ftp, "last_error", mrb_ssh_f_last_error, MRB_ARGS_NONE());
