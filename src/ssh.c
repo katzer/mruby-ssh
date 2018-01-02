@@ -220,14 +220,12 @@ get_attrs (mrb_state *mrb, mrb_value self, int type)
 {
     int path_len;
     SFTP_SESSION *session = DATA_PTR(self);
-    LIBSSH2_SFTP *sftp_session;
     LIBSSH2_SFTP_ATTRIBUTES attrs;
     char *path;
 
     raise_if_not_authenticated(mrb, self);
 
-    path         = get_path(mrb, self, &path_len);
-    sftp_session = session->sftp_session;
+    path = get_path(mrb, self, &path_len);
 
     libssh2_sftp_stat_ex(session->sftp_session, path, path_len, type, &attrs);
 
