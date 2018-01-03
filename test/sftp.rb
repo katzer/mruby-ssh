@@ -191,3 +191,18 @@ assert 'SFTP#atime' do
     assert_true atime > 0
   end
 end
+
+assert 'SFTP#size' do
+  SFTP.open('test.rebex.net') do |ftp|
+    ftp.login('demo', 'password')
+
+    assert_raise(ArgumentError) { ftp.size }
+    assert_raise(RuntimeError)  { ftp.size 'invalid path' }
+    assert_raise(RuntimeError)  { ftp.size 'pub/' }
+
+    size = ftp.size 'readme.txt'
+
+    assert_kind_of Integer, size
+    assert_true size > 0
+  end
+end

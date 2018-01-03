@@ -453,7 +453,7 @@ mrb_sftp_f_mtime (mrb_state *mrb, mrb_value self)
         return mrb_fixnum_value(attrs.mtime);
     }
 
-    mrb_raise(mrb, E_RUNTIME_ERROR, "Unable to get status about the file.");
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Unable to get mtime of file.");
 }
 
 static mrb_value
@@ -466,7 +466,26 @@ mrb_sftp_f_atime (mrb_state *mrb, mrb_value self)
         return mrb_fixnum_value(attrs.atime);
     }
 
-    mrb_raise(mrb, E_RUNTIME_ERROR, "Unable to get status about the file.");
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Unable to get atime of file.");
+}
+
+static mrb_value
+mrb_sftp_f_size (mrb_state *mrb, mrb_value self)
+{
+    LIBSSH2_SFTP_ATTRIBUTES attrs;
+    attrs = get_attrs(mrb, self, LIBSSH2_SFTP_STAT);
+
+    if (attrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS) {
+        if (attrs.permissions & LIBSSH2_SFTP_S_IFDIR) {
+            mrb_raise(mrb, E_RUNTIME_ERROR, "Unable to get size of file.");
+        }
+    }
+
+    if (attrs.flags & LIBSSH2_SFTP_ATTR_SIZE) {
+        return mrb_fixnum_value(attrs.filesize);
+    }
+
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Unable to get size of file.");
 }
 
 static mrb_value
@@ -528,6 +547,7 @@ mrb_mruby_ssh_gem_init (mrb_state *mrb)
     mrb_define_method(mrb, ftp, "entries", mrb_sftp_f_entries, MRB_ARGS_OPT(1));
     mrb_define_method(mrb, ftp, "mtime",   mrb_sftp_f_mtime,   MRB_ARGS_REQ(1));
     mrb_define_method(mrb, ftp, "atime",   mrb_sftp_f_atime,   MRB_ARGS_REQ(1));
+    mrb_define_method(mrb, ftp, "size",    mrb_sftp_f_size,    MRB_ARGS_REQ(1));
     mrb_define_method(mrb, ftp, "close",   mrb_sftp_f_close,   MRB_ARGS_NONE());
     mrb_define_method(mrb, ftp, "closed?", mrb_sftp_f_closed,  MRB_ARGS_NONE());
     mrb_define_method(mrb, ftp, "last_error", mrb_ssh_f_last_error, MRB_ARGS_NONE());
