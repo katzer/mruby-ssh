@@ -114,12 +114,6 @@ assert 'SFTP::open' do
   assert_true  sftp.closed? if sftp
 end
 
-assert 'SFTP::open', 'auto login' do
-  SFTP.open('test.rebex.net', username: 'demo', password: 'password') do |ftp|
-    assert_true ftp.logged_in?
-  end
-end
-
 assert 'SFTP#list' do
   SFTP.open('test.rebex.net') do |ftp|
     ftp.login('demo', 'password')
@@ -164,10 +158,12 @@ assert 'SFTP#last_errno' do
   end
 end
 
-assert 'SFTP#mtime' do
-  SFTP.open('test.rebex.net') do |ftp|
-    ftp.login('demo', 'password')
+SFTP.open('test.rebex.net', username: 'demo', password: 'password') do |ftp|
+  assert 'SFTP::open', 'auto login' do
+    assert_true ftp.logged_in?
+  end
 
+  assert 'SFTP#mtime' do
     assert_raise(ArgumentError) { ftp.mtime }
     assert_raise(RuntimeError)  { ftp.mtime 'invalid path' }
 
@@ -176,12 +172,8 @@ assert 'SFTP#mtime' do
     assert_kind_of Integer, mtime
     assert_true mtime > 0
   end
-end
 
-assert 'SFTP#atime' do
-  SFTP.open('test.rebex.net') do |ftp|
-    ftp.login('demo', 'password')
-
+  assert 'SFTP#atime' do
     assert_raise(ArgumentError) { ftp.atime }
     assert_raise(RuntimeError)  { ftp.atime 'invalid path' }
 
@@ -190,12 +182,8 @@ assert 'SFTP#atime' do
     assert_kind_of Integer, atime
     assert_true atime > 0
   end
-end
 
-assert 'SFTP#size' do
-  SFTP.open('test.rebex.net') do |ftp|
-    ftp.login('demo', 'password')
-
+  assert 'SFTP#size' do
     assert_raise(ArgumentError) { ftp.size }
     assert_raise(RuntimeError)  { ftp.size 'invalid path' }
     assert_raise(RuntimeError)  { ftp.size 'pub/' }
