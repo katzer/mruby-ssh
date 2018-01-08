@@ -158,7 +158,7 @@ assert 'SFTP#last_errno' do
   end
 end
 
-SFTP.open('test.rebex.net', username: 'demo', password: 'password') do |ftp|
+SFTP.open('demo.wftpserver.com', username: 'demo-user', password: 'demo-user', port: 2222) do |ftp|
   assert 'SFTP::open', 'auto login' do
     assert_true ftp.logged_in?
   end
@@ -167,7 +167,7 @@ SFTP.open('test.rebex.net', username: 'demo', password: 'password') do |ftp|
     assert_raise(ArgumentError) { ftp.mtime }
     assert_raise(RuntimeError)  { ftp.mtime 'invalid path' }
 
-    mtime = ftp.mtime 'pub/example'
+    mtime = ftp.mtime '/upload'
 
     assert_kind_of Integer, mtime
     assert_true mtime > 0
@@ -177,20 +177,41 @@ SFTP.open('test.rebex.net', username: 'demo', password: 'password') do |ftp|
     assert_raise(ArgumentError) { ftp.atime }
     assert_raise(RuntimeError)  { ftp.atime 'invalid path' }
 
-    atime = ftp.atime 'pub/example'
+    atime = ftp.atime '/upload'
 
     assert_kind_of Integer, atime
     assert_true atime > 0
   end
 
+  assert 'SFTP#uid' do
+    assert_raise(ArgumentError) { ftp.uid }
+    assert_raise(RuntimeError)  { ftp.uid 'invalid path' }
+
+    uid = ftp.uid '/'
+
+    assert_kind_of Integer, uid
+    assert_true uid >= 0
+  end
+
+  assert 'SFTP#gid' do
+    assert_raise(ArgumentError) { ftp.gid }
+    assert_raise(RuntimeError)  { ftp.gid 'invalid path' }
+
+    gid = ftp.gid '/'
+
+    assert_kind_of Integer, gid
+    assert_true gid >= 0
+  end
+
   assert 'SFTP#size' do
     assert_raise(ArgumentError) { ftp.size }
     assert_raise(RuntimeError)  { ftp.size 'invalid path' }
-    assert_raise(RuntimeError)  { ftp.size 'pub/' }
+    assert_raise(RuntimeError)  { ftp.size '/download' }
 
-    size = ftp.size 'readme.txt'
+    file = ftp.entries('/upload').first
+    size = ftp.size(file)
 
     assert_kind_of Integer, size
-    assert_true size > 0
+    assert_true size >= 0
   end
 end

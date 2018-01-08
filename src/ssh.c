@@ -489,6 +489,32 @@ mrb_sftp_f_size (mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
+mrb_sftp_f_uid (mrb_state *mrb, mrb_value self)
+{
+    LIBSSH2_SFTP_ATTRIBUTES attrs;
+    attrs = get_attrs(mrb, self, LIBSSH2_SFTP_STAT);
+
+    if (attrs.flags & LIBSSH2_SFTP_ATTR_UIDGID) {
+        return mrb_fixnum_value(attrs.uid);
+    }
+
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Unable to get uid of file.");
+}
+
+static mrb_value
+mrb_sftp_f_gid (mrb_state *mrb, mrb_value self)
+{
+    LIBSSH2_SFTP_ATTRIBUTES attrs;
+    attrs = get_attrs(mrb, self, LIBSSH2_SFTP_STAT);
+
+    if (attrs.flags & LIBSSH2_SFTP_ATTR_UIDGID) {
+        return mrb_fixnum_value(attrs.gid);
+    }
+
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Unable to get gid of file.");
+}
+
+static mrb_value
 mrb_sftp_f_last_errno (mrb_state *mrb, mrb_value self)
 {
     SFTP_SESSION *session = DATA_PTR(self);
@@ -548,6 +574,8 @@ mrb_mruby_ssh_gem_init (mrb_state *mrb)
     mrb_define_method(mrb, ftp, "mtime",   mrb_sftp_f_mtime,   MRB_ARGS_REQ(1));
     mrb_define_method(mrb, ftp, "atime",   mrb_sftp_f_atime,   MRB_ARGS_REQ(1));
     mrb_define_method(mrb, ftp, "size",    mrb_sftp_f_size,    MRB_ARGS_REQ(1));
+    mrb_define_method(mrb, ftp, "uid",     mrb_sftp_f_uid,     MRB_ARGS_REQ(1));
+    mrb_define_method(mrb, ftp, "gid",     mrb_sftp_f_gid,     MRB_ARGS_REQ(1));
     mrb_define_method(mrb, ftp, "close",   mrb_sftp_f_close,   MRB_ARGS_NONE());
     mrb_define_method(mrb, ftp, "closed?", mrb_sftp_f_closed,  MRB_ARGS_NONE());
     mrb_define_method(mrb, ftp, "last_error", mrb_ssh_f_last_error, MRB_ARGS_NONE());
