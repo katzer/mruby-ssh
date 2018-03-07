@@ -28,7 +28,8 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   spec.authors = 'Sebastian Katzer'
   spec.summary = 'SSH client for mruby'
 
-  spec.cc.include_paths += %W[#{dir}/mbedtls/include #{dir}/ssh2/include]
+  spec.export_include_paths += %W[#{dir}/mbedtls/include #{dir}/ssh2/include]
+  spec.cc.include_paths     += spec.export_include_paths
 
   if target_win32?
     spec.cc.include_paths << "#{dir}/ssh2/win32"
