@@ -40,8 +40,7 @@ module SSH
       if opts[:key]
         login(opts[:user], opts[:key], nil, true, opts[:passphrase])
       else
-        prompt = opts[:non_interactive] != true
-        login(opts[:user], opts[:password], prompt)
+        login(opts[:user], opts[:password], opts[:non_interactive] != true)
       end
     end
 

@@ -239,14 +239,14 @@ static mrb_value
 mrb_ssh_f_login (mrb_state *mrb, mrb_value self)
 {
     mrb_int user_len, pass_len;
-    mrb_bool pass_given, phrase_given, pass_is_key, prompt;
+    mrb_bool pass_given, pass_is_key = FALSE, prompt = TRUE;
     char *user, *pass, *phrase, *pubkey = NULL;
     int ret;
 
     mrb_ssh_t *ssh = DATA_PTR(self);
     mrb_ssh_raise_unless_connected(mrb, ssh);
 
-    mrb_get_args(mrb, "s|s!?bbs!?", &user, &user_len, &pass, &pass_len, &pass_given, &prompt, &pass_is_key, &phrase, &phrase_given);
+    mrb_get_args(mrb, "s|s!?bbs!", &user, &user_len, &pass, &pass_len, &pass_given, &prompt, &pass_is_key, &phrase);
 
     if (pass_is_key && pass_given) {
         pubkey = strdup(pass);
