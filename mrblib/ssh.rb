@@ -20,50 +20,29 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-class SFTP
-  # A synonym for FTP.new, but with a mandatory host parameter.
-  # If a block is given, it is passed the FTP object, which will be closed
+module SSH
+  # Default SSH port
+  PORT = 22
+
+  # A synonym for SSH::Session.new, but with a mandatory host parameter.
+  # If a block is given, it is passed the SSH object, which will be closed
   # when the block finishes, or when an exception is raised.
   #
-  # @param [ String ] host Optional host name.
-  # @param [ *Array ] args See FTP.new
+  # @param [ String ] host The host name.
+  # @param [ String ] user Optional user name.
+  # @param [ Hash ]   opts See SSH::Session.new
   #
   # @return [ Net::FTP ]
-  def self.open(host, *args)
-    if block_given?
-      ftp = new(host, *args)
-      begin
-        yield ftp
-      ensure
-        ftp.close
-      end
-    else
-      new(host, *args)
+  def self.start(host, user = nil, opts = {})
+    opts[:user] = user if user
+    session     = Session.new(host, opts)
+
+    return session unless block_given?
+
+    begin
+      yield session
+    ensure
+      session.close
     end
-  end
-
-  # Creates and returns a new FTP object. If a host is given,
-  # a connection is made.
-  #
-  # @param [ String ] host Optional host name.
-  # @param [ Hash ]   opts Each key of which is a symbol.
-  #
-  # @return [ Net::FTP ]
-  def initialize(host = nil, opts = {})
-    return unless host
-    connect(host, opts[:port] || 22)
-    login(opts[:username], opts[:password]) if opts[:username]
-  end
-
-  # The hostname specified when calling 'connect'.
-  #
-  # @return [ String ]
-  attr_reader :host
-
-  # If the socket is connected to the host.
-  #
-  # @return [ Boolean ]
-  def connected?
-    !closed?
   end
 end

@@ -20,11 +20,32 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-Style/ParallelAssignment:
-  Enabled: false
+assert 'SSH' do
+  assert_kind_of Module, SSH
+end
 
-Style/RescueModifier:
-  Enabled: false
+assert 'SSH.startup' do
+  assert_nothing_raised { SSH.startup }
+  assert_true SSH.ready?
+end
 
-Documentation:
-  Enabled: false
+assert 'SSH.cleanup' do
+  assert_nothing_raised { SSH.cleanup }
+  assert_false SSH.ready?
+end
+
+assert 'SSH.start' do
+  assert_include SSH.public_methods, :start
+end
+
+assert 'SSH::TIMEOUT_ERROR' do
+  assert_include SSH.constants, :TIMEOUT_ERROR
+end
+
+assert 'SSH::DISCONNECT_ERROR' do
+  assert_include SSH.constants, :DISCONNECT_ERROR
+end
+
+assert 'SSH::AUTHENTICATION_ERROR' do
+  assert_include SSH.constants, :AUTHENTICATION_ERROR
+end
