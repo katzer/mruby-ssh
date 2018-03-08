@@ -21,8 +21,6 @@
  * SOFTWARE.
  */
 
-#define _WIN32_WINNT _WIN32_WINNT_VISTA
-
 #ifdef _WIN32
 # include <windows.h>
 # include <winsock2.h>

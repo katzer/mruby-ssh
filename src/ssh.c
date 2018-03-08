@@ -21,9 +21,8 @@
  * SOFTWARE.
  */
 
-#define _WIN32_WINNT _WIN32_WINNT_VISTA
-
 #ifdef _WIN32
+# define _WIN32_WINNT _WIN32_WINNT_VISTA
 # include <winsock2.h>
 #endif
 
@@ -82,9 +81,7 @@ mrb_ssh_f_ready (mrb_state *mrb, mrb_value self)
 void
 mrb_mruby_ssh_gem_init (mrb_state *mrb)
 {
-    struct RClass *ssh;
-
-    ssh = mrb_define_module(mrb, "SSH");
+    struct RClass *ssh = mrb_define_module(mrb, "SSH");
 
     mrb_define_class_method(mrb, ssh, "startup", mrb_ssh_f_startup, MRB_ARGS_NONE());
     mrb_define_class_method(mrb, ssh, "cleanup", mrb_ssh_f_cleanup, MRB_ARGS_NONE());
