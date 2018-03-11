@@ -24,9 +24,11 @@
 #ifndef MRUBY_SSH_H
 #define MRUBY_SSH_H
 
-#if defined(__cplusplus)
+#ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <libssh2.h>
 
 struct mrb_ssh
 {
@@ -36,7 +38,7 @@ struct mrb_ssh
 
 typedef struct mrb_ssh mrb_ssh_t;
 
-#if defined(__cplusplus)
-} /* extern "C" { */
+#ifdef __cplusplus
+}
 #endif
-#endif /* MRUBY_SSH_H */
+#endif
