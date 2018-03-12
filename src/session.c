@@ -56,9 +56,8 @@ mrb_ssh_session_free(mrb_state *mrb, void *p)
 
     if (mrb_ssh_initialized()) {
         libssh2_session_disconnect(ssh->session, NULL);
+        libssh2_session_free(ssh->session);
     }
-
-    libssh2_session_free(ssh->session);
 
 #ifdef WIN32
     closesocket(ssh->sock);
