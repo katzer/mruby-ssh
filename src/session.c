@@ -190,6 +190,10 @@ mrb_ssh_f_connect (mrb_state *mrb, mrb_value self)
     LIBSSH2_SESSION *session;
     int sock;
 
+    if (DATA_PTR(self)) {
+        mrb_raise(mrb, E_RUNTIME_ERROR, "SSH session already connected.");
+    }
+
     mrb_get_args(mrb, "s|i?", &host, &host_len, &port, &port_given);
 
     if (!port_given) {
