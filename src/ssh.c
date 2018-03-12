@@ -100,6 +100,8 @@ mrb_mruby_ssh_gem_init (mrb_state *mrb)
     mrb_define_const(mrb, ssh, "AUTHENTICATION_ERROR", mrb_fixnum_value(LIBSSH2_ERROR_AUTHENTICATION_FAILED));
 
     mrb_mruby_ssh_session_init(mrb);
+
+    mrb_ssh_f_startup(mrb, mrb_nil_value());
 }
 
 void
