@@ -239,7 +239,7 @@ mrb_ssh_f_close (mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_ssh_f_closed (mrb_state *mrb, mrb_value self)
 {
-    return DATA_PTR(self) ? mrb_false_value() : mrb_true_value();
+    return DATA_PTR(self) && mrb_ssh_initialized() ? mrb_false_value() : mrb_true_value();
 }
 
 static mrb_value
