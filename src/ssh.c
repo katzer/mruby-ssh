@@ -29,6 +29,7 @@
 #include "session.h"
 
 #include "mruby.h"
+#include "mruby/ext/ssh.h"
 
 #include <libssh2.h>
 
@@ -76,7 +77,13 @@ mrb_ssh_f_cleanup (mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_ssh_f_ready (mrb_state *mrb, mrb_value self)
 {
-    return mrb_bool_value(mrb_ssh_ready == 1);
+    return mrb_bool_value(mrb_ssh_ready);
+}
+
+unsigned int
+mrb_ssh_initialized()
+{
+    return mrb_ssh_ready;
 }
 
 void

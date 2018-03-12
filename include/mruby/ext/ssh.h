@@ -38,6 +38,8 @@ struct mrb_ssh
 
 typedef struct mrb_ssh mrb_ssh_t;
 
+unsigned int mrb_ssh_initialized();
+
 #ifdef __cplusplus
 }
 #endif

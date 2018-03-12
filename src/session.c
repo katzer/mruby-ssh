@@ -54,7 +54,10 @@ mrb_ssh_session_free(mrb_state *mrb, void *p)
 
     ssh = (mrb_ssh_t *)p;
 
-    libssh2_session_disconnect(ssh->session, NULL);
+    if (mrb_ssh_initialized()) {
+        libssh2_session_disconnect(ssh->session, NULL);
+    }
+
     libssh2_session_free(ssh->session);
 
 #ifdef WIN32
@@ -162,8 +165,7 @@ kbd_func (const char *name, int name_len, const char *inst, int inst_len,
           int num_prompts, const LIBSSH2_USERAUTH_KBDINT_PROMPT *prompts,
           LIBSSH2_USERAUTH_KBDINT_RESPONSE *responses, void **abstract)
 {
-    char *pass;
-    pass = getpass("Password: "); // TODO: Win32
+    char *pass = getpass("Password: ");
 
     (void)name;
     (void)name_len;
