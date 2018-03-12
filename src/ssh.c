@@ -26,10 +26,11 @@
 # include <winsock2.h>
 #endif
 
-#include <libssh2.h>
-#include "ssh/session.c"
+#include "session.h"
+
 #include "mruby.h"
-#include "mruby/data.h"
+
+#include <libssh2.h>
 
 static int mrb_ssh_ready = 0;
 

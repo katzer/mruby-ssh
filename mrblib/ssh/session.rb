@@ -56,24 +56,6 @@ module SSH
       !closed?
     end
 
-    # Add a callback to be invoked before close.
-    #
-    # @param [ Proc ] block A code block to invoke.
-    #
-    # @return [ Void ]
-    def on_close(&block)
-      (@deps ||= []) << block if block
-    end
-
-    # Close the session but invoke all callbacks first.
-    #
-    # @return [ Void ]
-    def close
-      @deps.each { |fn| fn.call } if @deps
-    ensure
-      _close
-    end
-
     # Authenticate the SSH session without any interactive prompts
     # if the password is nil.
     #

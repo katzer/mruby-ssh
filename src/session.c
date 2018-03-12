@@ -21,9 +21,21 @@
  * SOFTWARE.
  */
 
+#include "session.h"
+
+#include "mruby.h"
+#include "mruby/data.h"
+#include "mruby/class.h"
+#include "mruby/ext/ssh.h"
+#include "mruby/variable.h"
+
+#include <string.h>
+#include <stdlib.h>
+#include <libssh2.h>
+
 #ifdef _WIN32
-# include <windows.h>
 # include <winsock2.h>
+# include <windows.h>
 # include <ws2tcpip.h>
 # include "getpass.c"
 #else
@@ -32,15 +44,6 @@
 # include <netdb.h>
 # include <unistd.h>
 #endif
-
-#include <libssh2.h>
-#include <stdlib.h>
-
-#include "mruby.h"
-#include "mruby/data.h"
-#include "mruby/class.h"
-#include "mruby/variable.h"
-#include "mruby/ext/ssh.h"
 
 static void
 mrb_ssh_session_free(mrb_state *mrb, void *p)
@@ -207,7 +210,7 @@ mrb_ssh_f_connect (mrb_state *mrb, mrb_value self)
 
     mrb_data_init(self, ssh, &mrb_ssh_session_type);
 
-    mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "@host"),
+    mrb_iv_set(mrb, self, mrb_intern_static(mrb, "@host", 5),
                           mrb_str_new_static(mrb, host, host_len));
 
     return mrb_nil_value();
@@ -221,8 +224,8 @@ mrb_ssh_f_close (mrb_state *mrb, mrb_value self)
     DATA_PTR(self)  = NULL;
     DATA_TYPE(self) = NULL;
 
-    mrb_iv_remove(mrb, self, mrb_intern_lit(mrb, "@host"));
-    mrb_iv_remove(mrb, self, mrb_intern_lit(mrb, "@deps"));
+    mrb_iv_set(mrb, self, mrb_intern_static(mrb, "@host", 5),
+                          mrb_nil_value());
 
     return mrb_nil_value();
 }
@@ -359,7 +362,7 @@ mrb_mruby_ssh_session_init (mrb_state *mrb)
     MRB_SET_INSTANCE_TT(cls, MRB_TT_DATA);
 
     mrb_define_method(mrb, cls, "connect",     mrb_ssh_f_connect, MRB_ARGS_ARG(1,1));
-    mrb_define_method(mrb, cls, "_close",      mrb_ssh_f_close,   MRB_ARGS_NONE());
+    mrb_define_method(mrb, cls, "close",       mrb_ssh_f_close,   MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "closed?",     mrb_ssh_f_closed,  MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "login",       mrb_ssh_f_login,   MRB_ARGS_ARG(1,4));
     mrb_define_method(mrb, cls, "logged_in?",  mrb_ssh_f_logged,  MRB_ARGS_NONE());
