@@ -29,8 +29,8 @@ assert 'SSH.startup' do
   assert_true SSH.ready?
 end
 
-assert 'SSH.cleanup' do
-  assert_nothing_raised { SSH.cleanup }
+assert 'SSH.shutdown' do
+  assert_nothing_raised { SSH.shutdown }
   assert_false SSH.ready?
 end
 

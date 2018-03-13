@@ -60,7 +60,7 @@ mrb_ssh_f_startup (mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
-mrb_ssh_f_cleanup (mrb_state *mrb, mrb_value self)
+mrb_ssh_f_shutdown (mrb_state *mrb, mrb_value self)
 {
     if (!mrb_ssh_ready) return mrb_nil_value();
 
@@ -91,9 +91,9 @@ mrb_mruby_ssh_gem_init (mrb_state *mrb)
 {
     struct RClass *ssh = mrb_define_module(mrb, "SSH");
 
-    mrb_define_class_method(mrb, ssh, "startup", mrb_ssh_f_startup, MRB_ARGS_NONE());
-    mrb_define_class_method(mrb, ssh, "cleanup", mrb_ssh_f_cleanup, MRB_ARGS_NONE());
-    mrb_define_class_method(mrb, ssh, "ready?",  mrb_ssh_f_ready,   MRB_ARGS_NONE());
+    mrb_define_class_method(mrb, ssh, "startup",  mrb_ssh_f_startup,  MRB_ARGS_NONE());
+    mrb_define_class_method(mrb, ssh, "shutdown", mrb_ssh_f_shutdown, MRB_ARGS_NONE());
+    mrb_define_class_method(mrb, ssh, "ready?",  mrb_ssh_f_ready,     MRB_ARGS_NONE());
 
     mrb_define_const(mrb, ssh, "TIMEOUT_ERROR",        mrb_fixnum_value(LIBSSH2_ERROR_TIMEOUT));
     mrb_define_const(mrb, ssh, "DISCONNECT_ERROR",     mrb_fixnum_value(LIBSSH2_ERROR_SOCKET_DISCONNECT));
@@ -107,5 +107,5 @@ mrb_mruby_ssh_gem_init (mrb_state *mrb)
 void
 mrb_mruby_ssh_gem_final (mrb_state *mrb)
 {
-    mrb_ssh_f_cleanup(mrb, mrb_nil_value());
+    mrb_ssh_f_shutdown(mrb, mrb_nil_value());
 }
