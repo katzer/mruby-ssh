@@ -30,7 +30,7 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
 
   if target_win32?
     spec.cc.include_paths << "#{dir}/ssh2/win32"
-    spec.linker.libraries << 'ws2_32'
+    spec.linker.libraries += %w[ws2_32 advapi32]
   end
 
   download_build_deps(dir)
