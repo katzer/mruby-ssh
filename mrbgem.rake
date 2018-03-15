@@ -62,11 +62,19 @@ end
 # @return [ Void ]
 def download_build_deps(dir)
   file "#{dir}/mbedtls" do
-    sh "curl -s https://tls.mbed.org/download/mbedtls-#{MBET_VERSION}-apache.tgz | tar xzC . && mv mbedtls-#{MBET_VERSION} #{dir}/mbedtls" # rubocop:disable LineLength
+    if MBET_VERSION == 'head'
+      sh "git clone git://github.com/ARMmbed/mbedtls.git #{dir}/mbedtls"
+    else
+      sh "curl -s --fail --retry 3 --retry-delay 1 https://tls.mbed.org/download/mbedtls-#{MBET_VERSION}-apache.tgz | tar xzC . && mv mbedtls-#{MBET_VERSION} #{dir}/mbedtls" # rubocop:disable LineLength
+    end
   end
 
   file "#{dir}/ssh2" => "#{dir}/mbedtls" do
-    sh "curl -s https://www.libssh2.org/download/libssh2-#{SSH2_VERSION}.tar.gz | tar xzC . && mv libssh2-#{SSH2_VERSION} #{dir}/ssh2" # rubocop:disable LineLength
+    if SSH2_VERSION == 'head'
+      sh "git clone git://github.com/libssh2/libssh2.git #{dir}/ssh2"
+    else
+      sh "curl -s --fail --retry 3 --retry-delay 1 https://www.libssh2.org/download/libssh2-#{SSH2_VERSION}.tar.gz | tar xzC . && mv libssh2-#{SSH2_VERSION} #{dir}/ssh2" # rubocop:disable LineLength
+    end
   end
 
   file "#{dir}/ssh2/src/libssh2_config.h" => "#{dir}/ssh2" do
