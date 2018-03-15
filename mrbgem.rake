@@ -20,9 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-MBET_VERSION ||= ENV.fetch('MBET_VERSION', '2.7.0')
-SSH2_VERSION ||= ENV.fetch('SSH2_VERSION', '1.8.0')
-
 MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   spec.license = 'MIT'
   spec.authors = 'Sebastian Katzer'
@@ -39,11 +36,11 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   download_build_deps(dir)
 
   spec.objs += Dir["#{dir}/mbedtls/library/*.c"].map! do |f|
-    f.relative_path_from(dir).pathmap("#{build_dir}/%X.o")
+    f.relative_path_from(dir).pathmap("#{build_dir}/%X#{spec.exts.object}")
   end
 
   spec.objs += Dir["#{dir}/ssh2/src/*.c"].map! do |f|
-    f.relative_path_from(dir).pathmap("#{build_dir}/%X.o")
+    f.relative_path_from(dir).pathmap("#{build_dir}/%X#{spec.exts.object}")
   end
 end
 
@@ -55,6 +52,36 @@ def target_win32?
   build.is_a?(MRuby::CrossBuild) && build.host_target.to_s =~ /mingw/
 end
 
+# Download mbedtls.
+#
+# @param [ String ] dir     The place where to place them.
+# @param [ String ] version The version to download.
+#                           Defaults to: head
+#
+# @return [ Void ]
+def download_mbedtls(dir, version = 'head')
+  if version == 'head'
+    sh "git clone git://github.com/ARMmbed/mbedtls.git #{dir}/mbedtls"
+  else
+    sh "curl -s --fail --retry 3 --retry-delay 1 https://tls.mbed.org/download/mbedtls-#{version}-apache.tgz | tar xzC . && mv mbedtls-#{version} #{dir}/mbedtls" # rubocop:disable LineLength
+  end
+end
+
+# Download libssh2.
+#
+# @param [ String ] dir     The place where to place them.
+# @param [ String ] version The version to download.
+#                           Defaults to: head
+#
+# @return [ Void ]
+def download_ssh2(dir, version = 'head')
+  if version == 'head'
+    sh "git clone git://github.com/libssh2/libssh2.git #{dir}/ssh2"
+  else
+    sh "curl -s --fail --retry 3 --retry-delay 1 https://www.libssh2.org/download/libssh2-#{version}.tar.gz | tar xzC . && mv libssh2-#{version} #{dir}/ssh2" # rubocop:disable LineLength
+  end
+end
+
 # Download all build dependecies inclusing mbedtls and libssh2.
 #
 # @param [ String ] dir The place where to place them.
@@ -62,19 +89,11 @@ end
 # @return [ Void ]
 def download_build_deps(dir)
   file "#{dir}/mbedtls" do
-    if MBET_VERSION == 'head'
-      sh "git clone git://github.com/ARMmbed/mbedtls.git #{dir}/mbedtls"
-    else
-      sh "curl -s --fail --retry 3 --retry-delay 1 https://tls.mbed.org/download/mbedtls-#{MBET_VERSION}-apache.tgz | tar xzC . && mv mbedtls-#{MBET_VERSION} #{dir}/mbedtls" # rubocop:disable LineLength
-    end
+    download_mbedtls(dir, ENV.fetch('MBET_VERSION', '2.7.0'))
   end
 
   file "#{dir}/ssh2" => "#{dir}/mbedtls" do
-    if SSH2_VERSION == 'head'
-      sh "git clone git://github.com/libssh2/libssh2.git #{dir}/ssh2"
-    else
-      sh "curl -s --fail --retry 3 --retry-delay 1 https://www.libssh2.org/download/libssh2-#{SSH2_VERSION}.tar.gz | tar xzC . && mv libssh2-#{SSH2_VERSION} #{dir}/ssh2" # rubocop:disable LineLength
-    end
+    download_ssh2(dir, ENV.fetch('SSH2_VERSION', '1.8.0'))
   end
 
   file "#{dir}/ssh2/src/libssh2_config.h" => "#{dir}/ssh2" do

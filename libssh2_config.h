@@ -21,17 +21,20 @@
  * SOFTWARE.
  */
 
-#define HAVE_UNISTD_H
 #define HAVE_INTTYPES_H
 #define HAVE_STDLIB_H
-#define HAVE_SYS_TIME_H
 #define HAVE_LONGLONG
-#define HAVE_GETTIMEOFDAY
 #define HAVE_INET_ADDR
 #define HAVE_SELECT
 #define HAVE_SOCKET
 #define HAVE_STRTOLL
 #define HAVE_SNPRINTF
+
+#ifdef __MINGW32__
+# define HAVE_UNISTD_H
+# define HAVE_SYS_TIME_H
+# define HAVE_GETTIMEOFDAY
+#endif
 
 #ifdef _WIN32
 # define HAVE_WINDOWS_H
@@ -40,6 +43,9 @@
 # define HAVE_IOCTLSOCKET
 #else
 # define _GNU_SOURCE
+# define HAVE_UNISTD_H
+# define HAVE_SYS_TIME_H
+# define HAVE_GETTIMEOFDAY
 # define HAVE_SYS_SELECT_H
 # define HAVE_SYS_UIO_H
 # define HAVE_SYS_SOCKET_H
