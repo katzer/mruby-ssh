@@ -44,11 +44,7 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
 
   Rake::Task["#{dir}/ssh2"].invoke
 
-  spec.objs += Dir["#{dir}/mbedtls/library/*.c"].map! do |f|
-    f.relative_path_from(dir).pathmap("#{build_dir}/%X#{spec.exts.object}")
-  end
-
-  spec.objs += Dir["#{dir}/ssh2/src/*.c"].map! do |f|
+  spec.objs += Dir["#{dir}/{mbedtls/library,ssh2/src}/*.c"].map! do |f|
     f.relative_path_from(dir).pathmap("#{build_dir}/%X#{spec.exts.object}")
   end
 end
