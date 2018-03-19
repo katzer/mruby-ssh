@@ -244,15 +244,16 @@ mrb_ssh_f_closed (mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_ssh_f_login (mrb_state *mrb, mrb_value self)
 {
-    mrb_int user_len, pass_len;
     mrb_bool pass_given, pass_is_key = FALSE, prompt = TRUE;
-    char *user, *pass, *phrase, *pubkey = NULL;
+    mrb_int user_len = 0, pass_len = 0, phrase_len = 0;
+    const char *user, *pass, *phrase = NULL;
+    char *pubkey = NULL;
     int ret;
 
     mrb_ssh_t *ssh = DATA_PTR(self);
     mrb_ssh_raise_unless_connected(mrb, ssh);
 
-    mrb_get_args(mrb, "s|s!?bbs!", &user, &user_len, &pass, &pass_len, &pass_given, &prompt, &pass_is_key, &phrase);
+    mrb_get_args(mrb, "s|s!?bbs!", &user, &user_len, &pass, &pass_len, &pass_given, &prompt, &pass_is_key, &phrase, &phrase_len);
 
     if (pass_is_key && pass_given) {
         pubkey = strdup(pass);
