@@ -130,7 +130,7 @@ mrb_ssh_init_socket (int family, const char *host, int port, int *ptr)
 }
 
 static int
-mrb_ssh_init_session (int sock, LIBSSH2_SESSION **ptr, int blocking)
+mrb_ssh_init_session (int sock, LIBSSH2_SESSION **ptr, int blocking, long timeout)
 {
     LIBSSH2_SESSION *session;
     int rc;
@@ -140,6 +140,7 @@ mrb_ssh_init_session (int sock, LIBSSH2_SESSION **ptr, int blocking)
     if (!session) return 2;
 
     libssh2_session_set_blocking(session, blocking);
+    libssh2_session_set_timeout(session, timeout);
 
     while ((rc = libssh2_session_handshake(session, sock)) == LIBSSH2_ERROR_EAGAIN);
 
@@ -208,7 +209,7 @@ mrb_ssh_f_connect (mrb_state *mrb, mrb_value self)
 
     blocking = mrb_test(mrb_attr_get(mrb, self, mrb_intern_static(mrb, "block", 5)));
 
-    if (mrb_ssh_init_session(sock, &session, blocking) != 0) {
+    if (mrb_ssh_init_session(sock, &session, blocking, 5000) != 0) {
         mrb_raise(mrb, E_RUNTIME_ERROR, "Could not init ssh session.");
     }
 
