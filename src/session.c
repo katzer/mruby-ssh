@@ -70,6 +70,32 @@ mrb_ssh_session_free(mrb_state *mrb, void *p)
 
 static mrb_data_type const mrb_ssh_session_type = { "SSH::Session", mrb_ssh_session_free };
 
+int
+mrb_ssh_wait_socket (mrb_ssh_t *ssh)
+{
+    struct timeval timeout;
+    fd_set fd, *write_fd = NULL, *read_fd = NULL;
+    int rc, dir;
+
+    timeout.tv_sec = 10;
+    timeout.tv_usec = 0;
+
+    FD_ZERO(&fd);
+    FD_SET(ssh->sock, &fd);
+
+    dir = libssh2_session_block_directions(ssh->session);
+
+    if (dir & LIBSSH2_SESSION_BLOCK_INBOUND)
+        read_fd = &fd;
+
+    if (dir & LIBSSH2_SESSION_BLOCK_OUTBOUND)
+        write_fd = &fd;
+
+    rc = select(ssh->sock + 1, read_fd, write_fd, NULL, &timeout);
+
+    return rc;
+}
+
 static char *
 mrb_ssh_host_to_ip (int family, const char *host)
 {

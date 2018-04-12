@@ -39,6 +39,7 @@ struct mrb_ssh
 typedef struct mrb_ssh mrb_ssh_t;
 
 unsigned int mrb_ssh_initialized();
+int mrb_ssh_wait_socket (mrb_ssh_t *ssh);
 
 #ifdef __cplusplus
 }
