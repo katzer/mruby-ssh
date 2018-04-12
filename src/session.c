@@ -84,7 +84,7 @@ mrb_ssh_host_to_ip (int family, const char *host)
     if (getaddrinfo(host, NULL, &hints, &res) != 0)
         return NULL;
 
-    for (rp=res; rp!=NULL; rp=rp->ai_next) {
+    for (rp = res; rp != NULL; rp = rp->ai_next) {
         if (rp->ai_family == AF_INET) {
             addr = (&((struct sockaddr_in *)(rp->ai_addr))->sin_addr);
         } else {
@@ -130,7 +130,7 @@ mrb_ssh_init_socket (int family, const char *host, int port, int *ptr)
 }
 
 static int
-mrb_ssh_init_session (int sock, LIBSSH2_SESSION **ptr)
+mrb_ssh_init_session (int sock, LIBSSH2_SESSION **ptr, int blocking)
 {
     LIBSSH2_SESSION *session;
     int rc;
@@ -139,12 +139,13 @@ mrb_ssh_init_session (int sock, LIBSSH2_SESSION **ptr)
 
     if (!session) return 2;
 
-    libssh2_session_set_blocking(session, 1);
+    libssh2_session_set_blocking(session, blocking);
 
     while ((rc = libssh2_session_handshake(session, sock)) == LIBSSH2_ERROR_EAGAIN);
 
     if (rc == 0) {
         *ptr = session;
+        libssh2_session_set_last_error(session, 0, NULL);
     } else {
         libssh2_session_free(session);
     }
@@ -189,7 +190,7 @@ mrb_ssh_f_connect (mrb_state *mrb, mrb_value self)
 
     mrb_ssh_t *ssh;
     LIBSSH2_SESSION *session;
-    int sock;
+    int sock, blocking;
 
     if (DATA_PTR(self)) {
         mrb_raise(mrb, E_RUNTIME_ERROR, "SSH session already connected.");
@@ -205,7 +206,9 @@ mrb_ssh_f_connect (mrb_state *mrb, mrb_value self)
         mrb_raise(mrb, E_RUNTIME_ERROR, "Failed to connect.");
     }
 
-    if (mrb_ssh_init_session(sock, &session) != 0) {
+    blocking = mrb_test(mrb_attr_get(mrb, self, mrb_intern_static(mrb, "block", 5)));
+
+    if (mrb_ssh_init_session(sock, &session, blocking) != 0) {
         mrb_raise(mrb, E_RUNTIME_ERROR, "Could not init ssh session.");
     }
 
@@ -293,6 +296,50 @@ mrb_ssh_f_logged (mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
+mrb_ssh_f_block (mrb_state *mrb, mrb_value self)
+{
+    mrb_ssh_t *ssh = DATA_PTR(self);
+
+    if (ssh) {
+        libssh2_session_set_blocking(ssh->session, 1);
+    }
+
+    mrb_iv_set(mrb, self, mrb_intern_static(mrb, "block", 5),
+                          mrb_true_value());
+
+    return mrb_nil_value();
+}
+
+static mrb_value
+mrb_ssh_f_unblock (mrb_state *mrb, mrb_value self)
+{
+    mrb_ssh_t *ssh = DATA_PTR(self);
+
+    if (ssh) {
+        libssh2_session_set_blocking(ssh->session, 0);
+    }
+
+
+    mrb_iv_remove(mrb, self, mrb_intern_static(mrb, "block", 5));
+
+    return mrb_nil_value();
+}
+
+static mrb_value
+mrb_ssh_f_blocking (mrb_state *mrb, mrb_value self)
+{
+    mrb_ssh_t *ssh = DATA_PTR(self);
+
+    if (ssh && libssh2_session_get_blocking(ssh->session))
+        return mrb_true_value();
+
+    if (mrb_test(mrb_attr_get(mrb, self, mrb_intern_static(mrb, "block", 5))))
+        return mrb_true_value();
+
+    return mrb_false_value();
+}
+
+static mrb_value
 mrb_ssh_f_last_errno (mrb_state *mrb, mrb_value self)
 {
     mrb_ssh_t *ssh = DATA_PTR(self);
@@ -333,7 +380,7 @@ mrb_ssh_f_fingerprint (mrb_state *mrb, mrb_value self)
 
     keys = libssh2_hostkey_hash(ssh->session, LIBSSH2_HOSTKEY_HASH_SHA1);
 
-    for(int i = 0; i < 20; i++) {
+    for (int i = 0; i < 20; i++) {
         sprintf(key, "%02X ", (unsigned char)keys[i]);
         strcat(fingerprint, key);
     }
@@ -372,6 +419,9 @@ mrb_mruby_ssh_session_init (mrb_state *mrb)
     mrb_define_method(mrb, cls, "closed?",     mrb_ssh_f_closed,  MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "login",       mrb_ssh_f_login,   MRB_ARGS_ARG(1,4));
     mrb_define_method(mrb, cls, "logged_in?",  mrb_ssh_f_logged,  MRB_ARGS_NONE());
+    mrb_define_method(mrb, cls, "block",       mrb_ssh_f_block,   MRB_ARGS_NONE());
+    mrb_define_method(mrb, cls, "unblock",     mrb_ssh_f_unblock, MRB_ARGS_NONE());
+    mrb_define_method(mrb, cls, "blocking?",   mrb_ssh_f_blocking,MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "last_errno",  mrb_ssh_f_last_errno, MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "last_error",  mrb_ssh_f_last_error, MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "fingerprint", mrb_ssh_f_fingerprint, MRB_ARGS_NONE());

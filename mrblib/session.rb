@@ -30,6 +30,8 @@ module SSH
     #
     # @return [ SSH::Session ]
     def initialize(host = nil, opts = {})
+      block if opts[:block] != false
+
       return unless host
 
       SSH.startup

@@ -35,6 +35,7 @@ assert 'SSH::Session#new' do
 
   assert_true ssh.connected?
   assert_true ssh.logged_in?
+  assert_true ssh.blocking?
   assert_equal 59, ssh.fingerprint.length
   assert_equal 'test.rebex.net', ssh.host
 
@@ -79,10 +80,11 @@ end
 assert 'SSH::start' do
   session = nil
 
-  SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
+  SSH.start('test.rebex.net', 'demo', password: 'password', block: false) do |ssh|
     session = ssh
     assert_kind_of SSH::Session, ssh
     assert_true ssh.logged_in?
+    assert_false ssh.blocking?
   end
 
   assert_true session.closed?
