@@ -46,6 +46,16 @@
 #endif
 
 static void
+mrb_ssh_close_socket (int sock)
+{
+#ifdef WIN32
+    closesocket(sock);
+#else
+    close(sock);
+#endif
+}
+
+static void
 mrb_ssh_session_free(mrb_state *mrb, void *p)
 {
     mrb_ssh_t *ssh;
@@ -59,11 +69,7 @@ mrb_ssh_session_free(mrb_state *mrb, void *p)
         libssh2_session_free(ssh->session);
     }
 
-#ifdef WIN32
-    closesocket(ssh->sock);
-#else
-    close(ssh->sock);
-#endif
+    mrb_ssh_close_socket(ssh->sock);
 
     free(ssh);
 }
@@ -163,7 +169,10 @@ mrb_ssh_init_session (int sock, LIBSSH2_SESSION **ptr, int blocking, long timeou
 
     session = libssh2_session_init();
 
-    if (!session) return 2;
+    if (!session) {
+        mrb_ssh_close_socket(sock);
+        return 1;
+    }
 
     libssh2_session_set_blocking(session, blocking);
     libssh2_session_set_timeout(session, timeout);
@@ -174,6 +183,7 @@ mrb_ssh_init_session (int sock, LIBSSH2_SESSION **ptr, int blocking, long timeou
         *ptr = session;
         libssh2_session_set_last_error(session, 0, NULL);
     } else {
+        mrb_ssh_close_socket(sock);
         libssh2_session_free(session);
     }
 
