@@ -296,7 +296,8 @@ mrb_ssh_f_login (mrb_state *mrb, mrb_value self)
     mrb_get_args(mrb, "s|s!?bbs!", &user, &user_len, &pass, &pass_len, &pass_given, &prompt, &pass_is_key, &phrase, &phrase_len);
 
     if (pass_is_key && pass_given) {
-        pubkey = strdup(pass);
+        pubkey = (char*) malloc(pass_len + 4 + 1);
+        strcpy(pubkey, pass);
         strncat(pubkey, ".pub", 4);
     }
 
