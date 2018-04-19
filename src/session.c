@@ -287,7 +287,7 @@ mrb_ssh_f_login (mrb_state *mrb, mrb_value self)
     mrb_bool pass_given, pass_is_key = FALSE, prompt = TRUE;
     mrb_int user_len = 0, pass_len = 0, phrase_len = 0;
     const char *user, *pass, *phrase = NULL;
-    char *pubkey = NULL;
+    char *pubkey = NULL, *err;
     int ret;
 
     mrb_ssh_t *ssh = DATA_PTR(self);
@@ -312,11 +312,13 @@ mrb_ssh_f_login (mrb_state *mrb, mrb_value self)
     free(pubkey);
 
     switch (ret) {
+        case LIBSSH2_ERROR_NONE:
+            break;
         case LIBSSH2_ERROR_SOCKET_DISCONNECT:
             mrb_ssh_f_close(mrb, self);
-            mrb_raise(mrb, E_RUNTIME_ERROR, "SSH session disconnected.");
         case LIBSSH2_ERROR_AUTHENTICATION_FAILED:
-            mrb_raise(mrb, E_RUNTIME_ERROR, "Authentication failed.");
+            libssh2_session_last_error(ssh->session, &err, NULL, 0);
+            mrb_raise(mrb, E_RUNTIME_ERROR, err);
     }
 
     return mrb_nil_value();
@@ -356,7 +358,6 @@ mrb_ssh_f_unblock (mrb_state *mrb, mrb_value self)
     if (ssh) {
         libssh2_session_set_blocking(ssh->session, 0);
     }
-
 
     mrb_iv_remove(mrb, self, mrb_intern_static(mrb, "block", 5));
 
