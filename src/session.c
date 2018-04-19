@@ -245,7 +245,7 @@ mrb_ssh_f_connect (mrb_state *mrb, mrb_value self)
 
     blocking = mrb_test(mrb_attr_get(mrb, self, mrb_intern_static(mrb, "block", 5)));
 
-    if (mrb_ssh_init_session(sock, &session, blocking, 5000) != 0) {
+    if (mrb_ssh_init_session(sock, &session, blocking, 15000) != 0) {
         mrb_raise(mrb, E_RUNTIME_ERROR, "Could not init ssh session.");
     }
 
