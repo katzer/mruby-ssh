@@ -23,9 +23,9 @@
 MRuby::Build.new do |conf|
   toolchain ENV.fetch('TOOLCHAIN', :gcc)
 
-  conf.enable_debug
-  conf.enable_test
+  conf.enable_debug   if ARGV.include? 'test'
+  conf.enable_test    if ARGV.include? 'test'
+  conf.enable_bintest if ARGV.include? 'bintest'
 
-  conf.gem core: 'mruby-print'
   conf.gem __dir__
 end
