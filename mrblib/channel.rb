@@ -36,18 +36,13 @@ module SSH
     # @param [ Int ] max_win_size Max amount of unacknowledged data remote host
     #                             is allowed to send before receiving an packet.
     #                             Defaults to: WINDOW_DEFAULT
-    # @param [ String ] msg Additional data as required by the selected type.
     #
     # @return [ Void ]
-    def initialize(session, type = :session,
-                   max_pkg_size = nil, max_win_size = nil, msg = nil)
-
+    def initialize(session, type = :session, max_pkg_size = nil, max_win_size = nil)
       @session                   = session
       @type                      = type.to_s.freeze
       @local_maximum_packet_size = max_pkg_size || PACKET_DEFAULT
       @local_maximum_window_size = max_win_size || WINDOW_DEFAULT
-
-      open(msg) if @session.logged_in?
     end
 
     # The type of this channel, usually 'session'.
@@ -71,6 +66,75 @@ module SSH
     # @return [ Boolean ]
     def open?
       !closed?
+    end
+
+    # Syntactic sugar for executing a command. Sends a channel request asking
+    # that the given command be invoked. If the block is given, it will be
+    # called when the server responds.
+    #
+    # @param [ String ] cmd The command to execute.
+    #
+    # @return [ String ] nil if the subsystem could not be requested.
+    def exec(cmd, opts = {})
+      suc = request('exec', cmd, EXT_IGNORE)
+      out = read(stream: STDOUT, chomp: opts[:chomp]) if suc
+    ensure
+      yield(out, suc) if block_given?
+    end
+
+    # Captures the standard output of a command.
+    #
+    # @param [ String ] cmd The command to execute.
+    #
+    # @return [ String ] nil if the subsystem could not be requested.
+    def capture2(cmd, opts = {})
+      suc = request('exec', cmd, EXT_IGNORE)
+      out = read(stream: STDOUT, chomp: opts[:chomp]) if suc
+      [out, suc]
+    ensure
+      yield(out, suc) if block_given?
+    end
+
+    # Captures the standard output and the standard error of a command.
+    #
+    # @param [ String ] cmd The command to execute.
+    #
+    # @return [ String ] nil if the subsystem could not be requested.
+    def capture2e(cmd, opts = {})
+      suc = request('exec', cmd, EXT_MERGE)
+      out = read(stream: STDOUT, chomp: opts[:chomp]) if suc
+      [out, suc]
+    ensure
+      yield(out, suc) if block_given?
+    end
+
+    # Captures the standard output and the standard error of a command.
+    #
+    # @param [ String ] cmd The command to execute.
+    #
+    # @return [ String ] nil if the subsystem could not be requested.
+    def capture3(cmd, opts = {})
+      suc = request('exec', cmd, EXT_NORMAL)
+      out = read(stream: STDOUT, chomp: opts[:chomp]) if suc
+      err = read(stream: STDERR, chomp: opts[:chomp]) if suc
+      [out, err, suc]
+    ensure
+      yield(out, err, suc) if block_given?
+    end
+
+    # Syntactic sugar for requesting that a subsystem be started. Subsystems are
+    # a way for other protocols (like SFTP) to be run, using SSH as the
+    # transport.
+    #
+    # @param [ String ] subsystem The name of the subsystem.
+    # @param [ Int ]    ext_data  How to handle extended data (stderr).
+    #                             Defaults to: EXT_NORMAL
+    #
+    # @return [ Boolean ] true if the subsystem could be requested.
+    def subsystem(subsystem, ext_data = EXT_NORMAL)
+      suc = request('subsystem', subsystem, ext_data)
+    ensure
+      yield(suc) if block_given?
     end
   end
 end
