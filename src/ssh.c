@@ -88,6 +88,15 @@ mrb_ssh_initialized()
 }
 
 void
+mrb_ssh_raise_last_error (mrb_state *mrb, mrb_ssh_t *ssh)
+{
+    char *msg;
+
+    libssh2_session_last_error(ssh->session, &msg, NULL, 0);
+    mrb_raise(mrb, E_RUNTIME_ERROR, msg);
+}
+
+void
 mrb_mruby_ssh_gem_init (mrb_state *mrb)
 {
     struct RClass *ssh = mrb_define_module(mrb, "SSH");
