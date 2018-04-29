@@ -75,9 +75,10 @@ mrb_ssh_raise_unless_opened (mrb_state *mrb, mrb_ssh_channel_t *channel)
 static int
 mrb_ssh_channel_read (char **ptr, int id, mrb_ssh_channel_t *channel)
 {
-    unsigned int i, bytes = 0;
-    int rc, buf_len = 0x4000;
-    char buf[buf_len];
+    ssize_t rc;
+    int i, bytes   = 0;
+    size_t buf_len = 0x4000;
+    char buf[0x4000];
 
     for (;;)
     {
@@ -115,9 +116,9 @@ mrb_ssh_channel_read (char **ptr, int id, mrb_ssh_channel_t *channel)
 static mrb_value
 mrb_ssh_f_open (mrb_state *mrb, mrb_value self)
 {
-    const char *ctype, *msg = NULL;
+    const char *ctype, *msg   = NULL;
     mrb_int type_len, msg_len = 0;
-    unsigned int win_size, pkg_size;
+    mrb_int win_size, pkg_size;
 
     mrb_ssh_t *ssh;
     LIBSSH2_CHANNEL *channel;
@@ -148,7 +149,7 @@ mrb_ssh_f_open (mrb_state *mrb, mrb_value self)
     type_len = mrb_string_value_len(mrb, type);
 
     do {
-        channel = libssh2_channel_open_ex(ssh->session, ctype, (int) type_len, win_size, pkg_size, msg, msg_len);
+        channel = libssh2_channel_open_ex(ssh->session, ctype, type_len, win_size, pkg_size, msg, msg_len);
 
         if (channel) break;
 
@@ -203,9 +204,10 @@ mrb_ssh_f_request (mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_ssh_f_read (mrb_state *mrb, mrb_value self)
 {
+    ssize_t rc;
     unsigned int i, chomp, bytes = 0;
-    int rc, stream, buf_len      = 0x4000;
-    char buf[buf_len], *output   = NULL;
+    int stream, buf_len          = 0x4000;
+    char buf[0x4000], *output    = NULL;
     mrb_value res, arg           = mrb_nil_value();
     mrb_ssh_t *ssh               = mrb_ssh_session(mrb, self);
     mrb_ssh_channel_t *data      = DATA_PTR(self);
