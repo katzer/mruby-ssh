@@ -43,12 +43,19 @@ module SSH
       @type                      = type.to_s.freeze
       @local_maximum_packet_size = max_pkg_size || PACKET_DEFAULT
       @local_maximum_window_size = max_win_size || WINDOW_DEFAULT
+      @properties                = {}
     end
 
     # The type of this channel, usually 'session'.
     #
     # @return [ String ]
     attr_reader :type
+
+    # A hash of properties for this channel. These can be used to store state
+    # information about this channel.
+    #
+    # @return [ Hash ]
+    attr_reader :properties
 
     # The maximum packet size that the local host can receive.
     #
@@ -66,6 +73,25 @@ module SSH
     # @return [ Boolean ]
     def open?
       !closed?
+    end
+
+    # A shortcut for accessing properties of the channel.
+    #
+    # @param [ Object ] key The name of the property.
+    #
+    # @return [ Object ] The associated value.
+    def [](key)
+      @properties[key]
+    end
+
+    # A shortcut for setting properties of the channel.
+    #
+    # @param [ Object ] key   The name of the property.
+    # @param [ Object ] value The property value.
+    #
+    # @return [ Object ] The property value.
+    def []=(key, value)
+      @properties[key] = value
     end
 
     # Syntactic sugar for executing a command. Sends a channel request asking

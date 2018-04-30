@@ -89,17 +89,30 @@ end
 assert 'SSH::Channel#type' do
   channel = SSH::Channel.new(dummy)
   assert_true channel.type.frozen?
-  assert_raise(NoMethodError) { channel.type = 'other' }
+  assert_false channel.methods.include? :type=
 end
 
 assert 'SSH::Channel#local_maximum_packet_size' do
   channel = SSH::Channel.new(dummy)
-  assert_raise(NoMethodError) { channel.local_maximum_packet_size = 'other' }
+  assert_false channel.methods.include? :local_maximum_packet_size=
 end
 
 assert 'SSH::Channel#local_maximum_window_size' do
   channel = SSH::Channel.new(dummy)
-  assert_raise(NoMethodError) { channel.local_maximum_window_size = 'other' }
+  assert_false channel.methods.include? :local_maximum_window_size=
+end
+
+assert 'SSH::Channel#properties' do
+  channel = SSH::Channel.new(dummy)
+
+  assert_kind_of Hash, channel.properties
+  assert_true  channel.properties.empty?
+  assert_false channel.methods.include? :properties=
+
+  channel[:key] = :value
+
+  assert_equal :value, channel[:key]
+  assert_equal :value, channel.properties[:key]
 end
 
 SSH.start('test.rebex.net') do |ssh|
