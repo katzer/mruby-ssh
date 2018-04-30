@@ -72,7 +72,8 @@ module SSH
     # that the given command be invoked. If the block is given, it will be
     # called when the server responds.
     #
-    # @param [ String ] cmd The command to execute.
+    # @param [ String ]         cmd  The command to execute.
+    # @param [ Hash<Symbol, _>] opts Additional options.
     #
     # @return [ String ] nil if the subsystem could not be requested.
     def exec(cmd, opts = {})
@@ -84,33 +85,28 @@ module SSH
 
     # Captures the standard output of a command.
     #
-    # @param [ String ] cmd The command to execute.
+    # @param [ String ]         cmd  The command to execute.
+    # @param [ Hash<Symbol, _>] opts Additional options.
     #
     # @return [ String ] nil if the subsystem could not be requested.
     def capture2(cmd, opts = {})
-      suc = request('exec', cmd, EXT_IGNORE)
-      out = read(stream: STDOUT, chomp: opts[:chomp]) if suc
-      [out, suc]
-    ensure
-      yield(out, suc) if block_given?
+      __capture2__(cmd, opts, EXT_IGNORE)
     end
 
     # Captures the standard output and the standard error of a command.
     #
-    # @param [ String ] cmd The command to execute.
+    # @param [ String ]         cmd  The command to execute.
+    # @param [ Hash<Symbol, _>] opts Additional options.
     #
     # @return [ String ] nil if the subsystem could not be requested.
     def capture2e(cmd, opts = {})
-      suc = request('exec', cmd, EXT_MERGE)
-      out = read(stream: STDOUT, chomp: opts[:chomp]) if suc
-      [out, suc]
-    ensure
-      yield(out, suc) if block_given?
+      __capture2__(cmd, opts, EXT_MERGE)
     end
 
     # Captures the standard output and the standard error of a command.
     #
-    # @param [ String ] cmd The command to execute.
+    # @param [ String ]         cmd  The command to execute.
+    # @param [ Hash<Symbol, _>] opts Additional options.
     #
     # @return [ String ] nil if the subsystem could not be requested.
     def capture3(cmd, opts = {})
@@ -135,6 +131,22 @@ module SSH
       suc = request('subsystem', subsystem, ext_data)
     ensure
       yield(suc) if block_given?
+    end
+
+    private
+
+    # Captures the standard output and the standard error of a command.
+    #
+    # @param [ String ]         cmd  The command to execute.
+    # @param [ Hash<Symbol, _>] opts Additional options.
+    #
+    # @return [ String ] nil if the subsystem could not be requested.
+    def __capture2__(cmd, opts, ext_data)
+      suc = request('exec', cmd, ext_data)
+      out = read(stream: STDOUT, chomp: opts[:chomp]) if suc
+      [out, suc]
+    ensure
+      yield(out, suc) if block_given?
     end
   end
 end
