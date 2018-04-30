@@ -46,6 +46,26 @@ assert 'SSH::Session#new' do
   assert_nil   ssh.host
 end
 
+assert 'SSH::Session#properties' do
+  ssh = SSH::Session.new
+
+  assert_kind_of Hash, ssh.properties
+  assert_true  ssh.properties.empty?
+  assert_false ssh.methods.include? :properties=
+
+  ssh[:key] = :value
+
+  assert_equal :value, ssh[:key]
+  assert_equal :value, ssh.properties[:key]
+
+  props = { key: :value }
+  ssh   = SSH::Session.new(nil, properties: props)
+
+  assert_equal :value, ssh[:key]
+  props.clear
+  assert_equal :value, ssh[:key]
+end
+
 assert 'SSH::Session#connect+login' do
   ssh = SSH::Session.new
 

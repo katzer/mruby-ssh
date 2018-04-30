@@ -30,20 +30,15 @@ module SSH
     #
     # @return [ SSH::Session ]
     def initialize(host = nil, opts = {})
-      block if opts[:block] != false
+      @properties = (opts[:properties] || {}).dup
 
+      block if opts[:block] != false
       return unless host
 
       SSH.startup
       connect(host, opts[:port] || PORT)
 
-      return unless opts[:user]
-
-      if opts[:key]
-        login(opts[:user], opts[:key], nil, true, opts[:passphrase])
-      else
-        login(opts[:user], opts[:password], opts[:non_interactive] != true)
-      end
+      __login__(opts)
     end
 
     # The hostname specified when calling 'connect'.
@@ -51,11 +46,37 @@ module SSH
     # @return [ String ]
     attr_reader :host
 
+    # A hash of properties. These can be used to store
+    # state information about this session.
+    #
+    # @return [ Hash ]
+    attr_reader :properties
+
     # If the socket is connected to the host.
     #
     # @return [ Boolean ]
     def connected?
       !closed?
+    end
+
+    # Retrieves a custom property from this instance. This can be used to store
+    # additional state in applications that must manage multiple SSH sessions.
+    #
+    # @param [ Object ] key The name of the property.
+    #
+    # @return [ Object ] The associated value.
+    def [](key)
+      @properties[key]
+    end
+
+    # Sets a custom property for this instance.
+    #
+    # @param [ Object ] key   The name of the property.
+    # @param [ Object ] value The property value.
+    #
+    # @return [ Object ] The property value.
+    def []=(key, value)
+      @properties[key] = value
     end
 
     # Authenticate the SSH session without any interactive prompts
@@ -99,6 +120,21 @@ module SSH
     # @return [ Boolean ]
     def userauth_method_supported?(user, method)
       userauth_methods(user).include? method
+    end
+
+    # Do the login after connect.
+    #
+    # @param [ Hash<Symbol, String> ] opts See SSH::Session#initialize
+    #
+    # @return [ Void ]
+    def __login__(opts)
+      return unless opts[:user]
+
+      if opts[:key]
+        login(opts[:user], opts[:key], nil, true, opts[:passphrase])
+      else
+        login(opts[:user], opts[:password], opts[:non_interactive] != true)
+      end
     end
   end
 end
