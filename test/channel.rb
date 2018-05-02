@@ -26,6 +26,7 @@ def open_channel(ssh)
   channel = SSH::Channel.new(ssh)
 ensure
   channel.open
+  yield(channel) if block_given?
 end
 
 assert 'SSH::Channel' do
@@ -115,19 +116,31 @@ assert 'SSH::Channel#properties' do
   assert_equal :value, channel.properties[:key]
 end
 
-SSH.start('test.rebex.net') do |ssh|
-  assert 'SSH::Channel#open', 'session not logged in' do
-    assert_raise(RuntimeError) { SSH::Channel.new(ssh).open }
-  end
-
-  ssh.login('demo', 'password')
-
+SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
   assert 'SSH::Channel#open' do
     channel = SSH::Channel.new(ssh)
+
+    assert_raise(RuntimeError) { SSH::Channel.new(dummy).open }
 
     assert_nothing_raised { channel.open }
     assert_true channel.open?
     assert_raise(RuntimeError) { channel.open }
+  end
+
+  assert 'SSH::Channel#request' do
+    channel = SSH::Channel.new(ssh)
+    assert_raise(RuntimeError) { channel.request('shell') }
+
+    channel = open_channel(ssh)
+    assert_nothing_raised { channel.request('shell') }
+  end
+
+  assert 'SSH::Channel#subsystem' do
+    channel = SSH::Channel.new(ssh)
+    assert_raise(RuntimeError) { channel.subsystem('sftp') }
+
+    channel = open_channel(ssh)
+    assert_nothing_raised { channel.subsystem('sftp') }
   end
 
   assert 'SSH::Channel#exec' do
@@ -164,6 +177,16 @@ SSH.start('test.rebex.net') do |ssh|
     assert_equal "ETNA\n", out
     assert_nil err
     assert_true suc
+  end
+
+  assert 'SSH::Channel#env' do
+    channel = open_channel(ssh) { |ch| ch.request 'shell' }
+
+    if channel.env('MRB_SSH', 'env')
+      assert_equal 'MRB_SSH', channel.exec('echo $MRB_SSH', chomp: true)
+    else
+      skip ssh.last_error
+    end
   end
 
   assert 'SSH::Channel#close' do

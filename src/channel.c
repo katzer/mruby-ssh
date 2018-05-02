@@ -72,47 +72,6 @@ mrb_ssh_raise_unless_opened (mrb_state *mrb, mrb_ssh_channel_t *channel)
     mrb_raise(mrb, E_RUNTIME_ERROR, "SSH channel not opened.");
 }
 
-static int
-mrb_ssh_channel_read (char **ptr, int id, mrb_ssh_channel_t *channel)
-{
-    ssize_t rc;
-    int i, bytes   = 0;
-    size_t buf_len = 0x4000;
-    char buf[0x4000];
-
-    for (;;)
-    {
-        do {
-            rc = libssh2_channel_read_ex(channel->channel, id, buf, buf_len);
-
-            if (rc == 0)
-                break;
-
-            if (rc < 0 && rc != LIBSSH2_ERROR_EAGAIN)
-                return rc;
-
-            bytes += rc;
-
-            if (!*ptr) {
-                *ptr = (char *)malloc(sizeof(char) * (rc + 1));
-                strncpy(*ptr, buf, rc);
-            }
-
-            if (bytes > buf_len) {
-                *ptr = (char *)realloc(*ptr, sizeof(char) * (bytes + 1));
-                strncat(*ptr, buf, rc);
-            }
-
-        } while (rc > 0);
-
-        if (rc == LIBSSH2_ERROR_EAGAIN) {
-            mrb_ssh_wait_socket(channel->session->data);
-        } else break;
-    }
-
-    return bytes;
-}
-
 static mrb_value
 mrb_ssh_f_open (mrb_state *mrb, mrb_value self)
 {
@@ -176,14 +135,13 @@ mrb_ssh_f_request (mrb_state *mrb, mrb_value self)
     const char *req, *msg    = NULL;
     mrb_int req_len, msg_len = 0;
     mrb_int ext_data         = LIBSSH2_CHANNEL_EXTENDED_DATA_IGNORE;
-    mrb_value success        = mrb_false_value();
     mrb_ssh_t *ssh           = mrb_ssh_session(mrb, self);
     mrb_ssh_channel_t *data  = DATA_PTR(self);
 
     mrb_get_args(mrb, "s|s!i", &req, &req_len, &msg, &msg_len, &ext_data);
     mrb_ssh_raise_unless_opened(mrb, data);
 
-    while (libssh2_channel_handle_extended_data2(data->channel, ext_data) == LIBSSH2_ERROR_EAGAIN) {
+    while (libssh2_channel_handle_extended_data2(data->channel, (int)ext_data) == LIBSSH2_ERROR_EAGAIN) {
         mrb_ssh_wait_socket(ssh);
     }
 
@@ -191,26 +149,28 @@ mrb_ssh_f_request (mrb_state *mrb, mrb_value self)
         mrb_ssh_wait_socket(ssh);
     }
 
-    if (rc == LIBSSH2_ERROR_CHANNEL_REQUEST_DENIED)
-        return mrb_false_value();
-
-    if (rc != 0) {
-        mrb_ssh_raise_last_error(mrb, ssh);
+    switch (rc) {
+        case LIBSSH2_ERROR_CHANNEL_REQUEST_DENIED:
+            return mrb_false_value();
+        case 0:
+            return mrb_true_value();
+        default:
+            mrb_ssh_raise_last_error(mrb, ssh);
     }
 
-    return mrb_true_value();
+    return mrb_nil_value();
 }
 
 static mrb_value
 mrb_ssh_f_read (mrb_state *mrb, mrb_value self)
 {
     ssize_t rc;
-    unsigned int i, chomp, bytes = 0;
-    int stream, buf_len          = 0x4000;
-    char buf[0x4000], *output    = NULL;
-    mrb_value res, arg           = mrb_nil_value();
-    mrb_ssh_t *ssh               = mrb_ssh_session(mrb, self);
-    mrb_ssh_channel_t *data      = DATA_PTR(self);
+    int chomp = FALSE, stream = FALSE;
+    int bytes = 0, buf_len    = 0x4000;
+    char buf[0x4000], *output = NULL;
+    mrb_value res, arg        = mrb_nil_value();
+    mrb_ssh_t *ssh            = mrb_ssh_session(mrb, self);
+    mrb_ssh_channel_t *data   = DATA_PTR(self);
 
     mrb_ssh_raise_unless_opened(mrb, data);
     mrb_get_args(mrb, "H!", &arg);
@@ -259,6 +219,34 @@ mrb_ssh_f_read (mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
+mrb_ssh_f_env (mrb_state *mrb, mrb_value self)
+{
+    int rc;
+    const char *env, *val;
+    mrb_int env_len, val_len;
+    mrb_ssh_t *ssh           = mrb_ssh_session(mrb, self);
+    mrb_ssh_channel_t *data  = DATA_PTR(self);
+
+    mrb_get_args(mrb, "ss", &env, &env_len, &val, &val_len);
+    mrb_ssh_raise_unless_opened(mrb, data);
+
+    while ((rc = libssh2_channel_setenv_ex(data->channel, env, env_len, val, val_len)) == LIBSSH2_ERROR_EAGAIN) {
+        mrb_ssh_wait_socket(ssh);
+    }
+
+    switch (rc) {
+        case LIBSSH2_ERROR_CHANNEL_REQUEST_DENIED:
+            return mrb_false_value();
+        case 0:
+            return mrb_true_value();
+        default:
+            mrb_ssh_raise_last_error(mrb, ssh);
+    }
+
+    return mrb_nil_value();
+}
+
+static mrb_value
 mrb_ssh_f_close (mrb_state *mrb, mrb_value self)
 {
     mrb_ssh_channel_free(mrb, DATA_PTR(self));
@@ -300,6 +288,7 @@ mrb_mruby_ssh_channel_init (mrb_state *mrb)
     mrb_define_method(mrb, cls, "open",       mrb_ssh_f_open,    MRB_ARGS_OPT(1));
     mrb_define_method(mrb, cls, "request",    mrb_ssh_f_request, MRB_ARGS_ARG(1,1));
     mrb_define_method(mrb, cls, "read",       mrb_ssh_f_read,    MRB_ARGS_OPT(1));
+    mrb_define_method(mrb, cls, "env",        mrb_ssh_f_env,     MRB_ARGS_REQ(2));
     mrb_define_method(mrb, cls, "close",      mrb_ssh_f_close,   MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "closed?",    mrb_ssh_f_closed,  MRB_ARGS_NONE());
 
