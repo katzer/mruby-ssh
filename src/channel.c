@@ -41,7 +41,7 @@ static mrb_value KEY_CHOMP;
 static mrb_value KEY_STREAM;
 
 static void
-mrb_ssh_channel_free (mrb_state *mrb, void *p)
+mrb_ssh_channel_free3 (mrb_state *mrb, void *p, int wait)
 {
     mrb_ssh_channel_t *data;
 
@@ -51,10 +51,21 @@ mrb_ssh_channel_free (mrb_state *mrb, void *p)
 
     if (data->channel && data->session->data && mrb_ssh_initialized()) {
         libssh2_channel_close(data->channel);
+
+        if (wait == TRUE) {
+            while (libssh2_channel_wait_closed(data->channel) == LIBSSH2_ERROR_EAGAIN);
+        }
+
         libssh2_channel_free(data->channel);
     }
 
     free(data);
+}
+
+static void
+mrb_ssh_channel_free (mrb_state *mrb, void *p)
+{
+    mrb_ssh_channel_free3(mrb, p, FALSE);
 }
 
 static mrb_data_type const mrb_ssh_channel_type = { "SSH::Channel", mrb_ssh_channel_free };
@@ -309,7 +320,18 @@ mrb_ssh_f_get_eof (mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_ssh_f_close (mrb_state *mrb, mrb_value self)
 {
-    mrb_ssh_channel_free(mrb, DATA_PTR(self));
+    mrb_ssh_channel_free3(mrb, DATA_PTR(self), FALSE);
+
+    DATA_PTR(self)  = NULL;
+    DATA_TYPE(self) = NULL;
+
+    return mrb_nil_value();
+}
+
+static mrb_value
+mrb_ssh_f_close_bang (mrb_state *mrb, mrb_value self)
+{
+    mrb_ssh_channel_free3(mrb, DATA_PTR(self), TRUE);
 
     DATA_PTR(self)  = NULL;
     DATA_TYPE(self) = NULL;
@@ -353,6 +375,7 @@ mrb_mruby_ssh_channel_init (mrb_state *mrb)
     mrb_define_method(mrb, cls, "eof!",       mrb_ssh_f_eof_bang, MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "eof?",       mrb_ssh_f_get_eof, MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "close",      mrb_ssh_f_close,   MRB_ARGS_NONE());
+    mrb_define_method(mrb, cls, "close!",     mrb_ssh_f_close_bang, MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "closed?",    mrb_ssh_f_closed,  MRB_ARGS_NONE());
 
     mrb_define_const(mrb, cls, "WINDOW_DEFAULT", mrb_fixnum_value(LIBSSH2_CHANNEL_WINDOW_DEFAULT));
