@@ -247,6 +247,66 @@ mrb_ssh_f_env (mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
+mrb_ssh_f_eof (mrb_state *mrb, mrb_value self)
+{
+    int rc;
+    mrb_ssh_t *ssh           = mrb_ssh_session(mrb, self);
+    mrb_ssh_channel_t *data  = DATA_PTR(self);
+
+    mrb_ssh_raise_unless_opened(mrb, data);
+
+    while ((rc = libssh2_channel_send_eof(data->channel)) == LIBSSH2_ERROR_EAGAIN) {
+        mrb_ssh_wait_socket(ssh);
+    }
+
+    if (rc != 0) {
+        mrb_ssh_raise_last_error(mrb, ssh);
+    }
+
+    return mrb_nil_value();
+}
+
+static mrb_value
+mrb_ssh_f_eof_bang (mrb_state *mrb, mrb_value self)
+{
+    int rc;
+    mrb_ssh_t *ssh           = mrb_ssh_session(mrb, self);
+    mrb_ssh_channel_t *data  = DATA_PTR(self);
+
+    mrb_ssh_f_eof(mrb, self);
+
+    while ((rc = libssh2_channel_wait_eof(data->channel)) == LIBSSH2_ERROR_EAGAIN) {
+        mrb_ssh_wait_socket(ssh);
+    }
+
+    if (rc != 0) {
+        mrb_ssh_raise_last_error(mrb, ssh);
+    }
+
+    return mrb_nil_value();
+}
+
+static mrb_value
+mrb_ssh_f_get_eof (mrb_state *mrb, mrb_value self)
+{
+    mrb_ssh_t *ssh           = mrb_ssh_session(mrb, self);
+    mrb_ssh_channel_t *data  = DATA_PTR(self);
+
+    mrb_ssh_raise_unless_opened(mrb, data);
+
+    switch (libssh2_channel_eof(data->channel)) {
+        case 1:
+            return mrb_true_value();
+        case 0:
+            return mrb_false_value();
+        default:
+            mrb_ssh_raise_last_error(mrb, ssh);
+    }
+
+    return mrb_nil_value();
+}
+
+static mrb_value
 mrb_ssh_f_close (mrb_state *mrb, mrb_value self)
 {
     mrb_ssh_channel_free(mrb, DATA_PTR(self));
@@ -289,6 +349,9 @@ mrb_mruby_ssh_channel_init (mrb_state *mrb)
     mrb_define_method(mrb, cls, "request",    mrb_ssh_f_request, MRB_ARGS_ARG(1,1));
     mrb_define_method(mrb, cls, "read",       mrb_ssh_f_read,    MRB_ARGS_OPT(1));
     mrb_define_method(mrb, cls, "env",        mrb_ssh_f_env,     MRB_ARGS_REQ(2));
+    mrb_define_method(mrb, cls, "eof",        mrb_ssh_f_eof,     MRB_ARGS_NONE());
+    mrb_define_method(mrb, cls, "eof!",       mrb_ssh_f_eof_bang, MRB_ARGS_NONE());
+    mrb_define_method(mrb, cls, "eof?",       mrb_ssh_f_get_eof, MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "close",      mrb_ssh_f_close,   MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "closed?",    mrb_ssh_f_closed,  MRB_ARGS_NONE());
 

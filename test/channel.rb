@@ -189,6 +189,14 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     end
   end
 
+  assert 'SSH::Channel#eof' do
+    channel = open_channel(ssh) { |ch| ch.request 'shell' }
+
+    assert_false channel.eof?
+    channel.eof!
+    assert_true channel.eof?
+  end
+
   assert 'SSH::Channel#close' do
     channel = SSH::Channel.new(ssh)
 
