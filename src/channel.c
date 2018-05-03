@@ -40,37 +40,44 @@ static mrb_sym SYM_PKG_SIZE;
 static mrb_value KEY_CHOMP;
 static mrb_value KEY_STREAM;
 
-static void
+static int
 mrb_ssh_channel_free3 (mrb_state *mrb, void *p, int wait)
 {
+    int exitcode = 1;
     mrb_ssh_channel_t *data;
+    LIBSSH2_CHANNEL *channel;
 
-    if (!p) return;
+    if (!p) return exitcode;
 
-    data = (mrb_ssh_channel_t *)p;
+    data    = (mrb_ssh_channel_t *)p;
+    channel = data->channel;
 
-    if (data->channel && data->session->data && mrb_ssh_initialized()) {
-        libssh2_channel_close(data->channel);
+    if (channel && data->session->data && mrb_ssh_initialized()) {
+        libssh2_channel_close(channel);
 
         if (wait == TRUE) {
-            while (libssh2_channel_wait_closed(data->channel) == LIBSSH2_ERROR_EAGAIN) {
+            while (libssh2_channel_wait_closed(channel) == LIBSSH2_ERROR_EAGAIN) {
                 mrb_ssh_wait_socket(data->session->data);
             }
+
+            exitcode = libssh2_channel_get_exit_status(channel);
         }
 
-        libssh2_channel_free(data->channel);
+        libssh2_channel_free(channel);
     }
 
     free(data);
+
+    return exitcode;
 }
 
-static void
+static int
 mrb_ssh_channel_free (mrb_state *mrb, void *p)
 {
-    mrb_ssh_channel_free3(mrb, p, FALSE);
+    return mrb_ssh_channel_free3(mrb, p, FALSE);
 }
 
-static mrb_data_type const mrb_ssh_channel_type = { "SSH::Channel", mrb_ssh_channel_free };
+static mrb_data_type const mrb_ssh_channel_type = { "SSH::Channel", (void *)mrb_ssh_channel_free };
 
 static mrb_ssh_t *
 mrb_ssh_session (mrb_state *mrb, mrb_value self)
@@ -362,12 +369,12 @@ mrb_ssh_f_close (mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_ssh_f_close_bang (mrb_state *mrb, mrb_value self)
 {
-    mrb_ssh_channel_free3(mrb, DATA_PTR(self), TRUE);
+    int exitcode = mrb_ssh_channel_free3(mrb, DATA_PTR(self), TRUE);
 
     DATA_PTR(self)  = NULL;
     DATA_TYPE(self) = NULL;
 
-    return mrb_nil_value();
+    return mrb_fixnum_value(exitcode);
 }
 
 static mrb_value
