@@ -186,12 +186,14 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     channel = SSH::Channel.new(ssh)
     assert_raise(RuntimeError) { channel.flush }
 
-    channel = open_channel(ssh) { |ch| ch.request('exec', 'hostname') }
-    assert_kind_of Integer, channel.flush
-    # assert_nil channel.read # TODO why not nil?
+    channel = open_channel(ssh) { |ch| ch.request('exec', 'echo "123"') }
+    channel.eof!
+    assert_equal 4, channel.flush
+    assert_nil channel.read
     assert_nothing_raised { channel.flush }
 
     channel = open_channel(ssh) { |ch| ch.request('exec', 'hostname') }
+    channel.eof!
     channel.flush(SSH::Channel::STDERR)
     assert_nil channel.read(SSH::Channel::STDERR)
     assert_kind_of String, channel.read(SSH::Channel::STDOUT)
