@@ -179,6 +179,24 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     assert_true suc
   end
 
+  assert 'SSH::Channel#flush' do
+    channel = SSH::Channel.new(dummy)
+    assert_raise(RuntimeError) { channel.flush }
+
+    channel = SSH::Channel.new(ssh)
+    assert_raise(RuntimeError) { channel.flush }
+
+    channel = open_channel(ssh) { |ch| ch.request('exec', 'hostname') }
+    assert_kind_of Integer, channel.flush
+    # assert_nil channel.read # TODO why not nil?
+    assert_nothing_raised { channel.flush }
+
+    channel = open_channel(ssh) { |ch| ch.request('exec', 'hostname') }
+    channel.flush(SSH::Channel::STDERR)
+    assert_nil channel.read(SSH::Channel::STDERR)
+    assert_kind_of String, channel.read(SSH::Channel::STDOUT)
+  end
+
   assert 'SSH::Channel#env' do
     channel = open_channel(ssh) { |ch| ch.request 'shell' }
 
@@ -207,11 +225,11 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     channel.open
     assert_true channel.open?
     channel.close!
-    # assert_true channel.open?
+    assert_true channel.closed?
 
-    # channel.open
-    # ssh.close
-    # assert_false channel.open?
-    # assert_nothing_raised { channel.close }
+    channel.open
+    ssh.close
+    assert_false channel.open?
+    assert_nothing_raised { channel.close }
   end
 end

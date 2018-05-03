@@ -53,7 +53,9 @@ mrb_ssh_channel_free3 (mrb_state *mrb, void *p, int wait)
         libssh2_channel_close(data->channel);
 
         if (wait == TRUE) {
-            while (libssh2_channel_wait_closed(data->channel) == LIBSSH2_ERROR_EAGAIN);
+            while (libssh2_channel_wait_closed(data->channel) == LIBSSH2_ERROR_EAGAIN) {
+                mrb_ssh_wait_socket(data->session->data);
+            }
         }
 
         libssh2_channel_free(data->channel);
@@ -145,7 +147,7 @@ mrb_ssh_f_request (mrb_state *mrb, mrb_value self)
     int rc;
     const char *req, *msg    = NULL;
     mrb_int req_len, msg_len = 0;
-    mrb_int ext_data         = LIBSSH2_CHANNEL_EXTENDED_DATA_IGNORE;
+    mrb_int ext_data         = LIBSSH2_CHANNEL_EXTENDED_DATA_NORMAL;
     mrb_ssh_t *ssh           = mrb_ssh_session(mrb, self);
     mrb_ssh_channel_t *data  = DATA_PTR(self);
 
@@ -176,7 +178,7 @@ static mrb_value
 mrb_ssh_f_read (mrb_state *mrb, mrb_value self)
 {
     ssize_t rc;
-    int chomp = FALSE, stream = FALSE;
+    int chomp = FALSE, stream = 0;
     int bytes = 0, buf_len    = 0x4000;
     char buf[0x4000], *output = NULL;
     mrb_value res, arg        = mrb_nil_value();
@@ -184,15 +186,26 @@ mrb_ssh_f_read (mrb_state *mrb, mrb_value self)
     mrb_ssh_channel_t *data   = DATA_PTR(self);
 
     mrb_ssh_raise_unless_opened(mrb, data);
-    mrb_get_args(mrb, "H!", &arg);
+    mrb_get_args(mrb, "|o", &arg);
 
-    if (mrb_hash_p(arg)) {
-        stream = mrb_fixnum(mrb_hash_get(mrb, arg, KEY_STREAM));
-        chomp  = mrb_type(mrb_hash_get(mrb, arg, KEY_CHOMP)) == MRB_TT_TRUE;
+    switch (mrb_type(arg)) {
+        case MRB_TT_HASH:
+            stream = mrb_fixnum(mrb_hash_get(mrb, arg, KEY_STREAM));
+            chomp  = mrb_type(mrb_hash_get(mrb, arg, KEY_CHOMP)) == MRB_TT_TRUE;
+            break;
+
+        case MRB_TT_FIXNUM:
+        case MRB_TT_FALSE:
+            stream = mrb_fixnum(arg);
+            break;
+
+        default:
+            mrb_raise(mrb, E_TYPE_ERROR, "expected Hash or Fixnum");
     }
 
     for (;;) {
         do {
+
             rc = libssh2_channel_read_ex(data->channel, stream, buf, buf_len);
 
             if (rc <= 0)
@@ -230,13 +243,31 @@ mrb_ssh_f_read (mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
+mrb_ssh_f_flush (mrb_state *mrb, mrb_value self)
+{
+    int rc;
+    mrb_int stream          = 0;
+    mrb_ssh_t *ssh          = mrb_ssh_session(mrb, self);
+    mrb_ssh_channel_t *data = DATA_PTR(self);
+
+    mrb_get_args(mrb, "|i", &stream);
+    mrb_ssh_raise_unless_opened(mrb, data);
+
+    while ((rc = libssh2_channel_flush_ex(data->channel, stream)) == LIBSSH2_ERROR_EAGAIN) {
+        mrb_ssh_wait_socket(ssh);
+    }
+
+    return mrb_fixnum_value(rc);
+}
+
+static mrb_value
 mrb_ssh_f_env (mrb_state *mrb, mrb_value self)
 {
     int rc;
     const char *env, *val;
     mrb_int env_len, val_len;
-    mrb_ssh_t *ssh           = mrb_ssh_session(mrb, self);
-    mrb_ssh_channel_t *data  = DATA_PTR(self);
+    mrb_ssh_t *ssh          = mrb_ssh_session(mrb, self);
+    mrb_ssh_channel_t *data = DATA_PTR(self);
 
     mrb_get_args(mrb, "ss", &env, &env_len, &val, &val_len);
     mrb_ssh_raise_unless_opened(mrb, data);
@@ -370,6 +401,7 @@ mrb_mruby_ssh_channel_init (mrb_state *mrb)
     mrb_define_method(mrb, cls, "open",       mrb_ssh_f_open,    MRB_ARGS_OPT(1));
     mrb_define_method(mrb, cls, "request",    mrb_ssh_f_request, MRB_ARGS_ARG(1,1));
     mrb_define_method(mrb, cls, "read",       mrb_ssh_f_read,    MRB_ARGS_OPT(1));
+    mrb_define_method(mrb, cls, "flush",      mrb_ssh_f_flush,   MRB_ARGS_OPT(1));
     mrb_define_method(mrb, cls, "env",        mrb_ssh_f_env,     MRB_ARGS_REQ(2));
     mrb_define_method(mrb, cls, "eof",        mrb_ssh_f_eof,     MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "eof!",       mrb_ssh_f_eof_bang, MRB_ARGS_NONE());
