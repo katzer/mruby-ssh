@@ -34,7 +34,7 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   end
 
   file "#{dir}/mbedtls" do
-    download_mbedtls(dir, ENV.fetch('MBET_VERSION', '2.8.0'))
+    download_mbedtls(dir, ENV.fetch('MBET_VERSION', '2.9.0'))
   end
 
   file "#{dir}/ssh2" => "#{dir}/mbedtls" do
