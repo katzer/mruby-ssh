@@ -35,6 +35,15 @@
 #include <stdlib.h>
 #include <libssh2.h>
 
+#if MRUBY_RELEASE_NO < 10400
+static mrb_int
+mrb_str_index(mrb_state *mrb, mrb_value str, const char *lit, mrb_int len, mrb_int off)
+{
+    mrb_value pos = mrb_funcall(mrb, str, "index", 2, mrb_str_new_static(mrb, lit, len), mrb_fixnum_value(off));
+    return mrb_nil_p(pos) ? -1 : mrb_fixnum(pos);
+}
+#endif
+
 static mrb_sym SYM_ID;
 static mrb_sym SYM_BUF;
 static mrb_value KEY_CHOMP;
