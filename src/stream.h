@@ -26,22 +26,8 @@ extern "C" {
 #endif
 
 #include "mruby.h"
-#include "mruby/ext/ssh.h"
 
-#include <libssh2.h>
-
-struct mrb_ssh_channel
-{
-    struct RData *session;
-    LIBSSH2_CHANNEL *channel;
-};
-
-typedef struct mrb_ssh_channel mrb_ssh_channel_t;
-
-void mrb_mruby_ssh_channel_init (mrb_state *mrb);
-
-mrb_ssh_t *mrb_ssh_session (mrb_state *mrb, mrb_value self);
-mrb_ssh_channel_t *mrb_ssh_channel_bang (mrb_state *mrb, mrb_value self);
+void mrb_mruby_ssh_stream_init (mrb_state *mrb);
 
 #ifdef __cplusplus
 }

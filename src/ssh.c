@@ -28,6 +28,7 @@
 
 #include "session.h"
 #include "channel.h"
+#include "stream.h"
 
 #include "mruby.h"
 #include "mruby/ext/ssh.h"
@@ -111,6 +112,7 @@ mrb_mruby_ssh_gem_init (mrb_state *mrb)
 
     mrb_mruby_ssh_session_init(mrb);
     mrb_mruby_ssh_channel_init(mrb);
+    mrb_mruby_ssh_stream_init(mrb);
 
     mrb_ssh_f_startup(mrb, mrb_nil_value());
 }

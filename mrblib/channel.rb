@@ -95,18 +95,50 @@ module SSH
     end
 
     # Syntactic sugar for executing a command. Sends a channel request asking
-    # that the given command be invoked. If the block is given, it will be
-    # called when the server responds.
+    # that the given command be invoked.
     #
     # @param [ String ]         cmd  The command to execute.
     # @param [ Hash<Symbol, _>] opts Additional options.
     #
     # @return [ String ] nil if the subsystem could not be requested.
     def exec(cmd, opts = {})
-      suc = request('exec', cmd, EXT_IGNORE)
-      out = read(stream: STDOUT, chomp: opts[:chomp]) if suc
+      ok = request('exec', cmd, EXT_IGNORE)
+      io = Stream.new(self).gets(chomp: opts[:chomp]) if ok
     ensure
-      yield(out, suc) if block_given?
+      yield(io, ok) if block_given?
+    end
+
+    # Open stdin and stdout streams and start remote executable.
+    #
+    # @param [ String ] cmd    The command to execute.
+    # @param [ Proc ]   &block If given it will be invoked with the streams.
+    #
+    # @return [ Array<SSH::Stream> ] nil if &block is given.
+    def popen2(cmd)
+      __popen2__(cmd, EXT_IGNORE)
+    end
+
+    # Open stdin and stdout streams and start remote executable.
+    #
+    # @param [ String ] cmd    The command to execute.
+    # @param [ Proc ]   &block If given it will be invoked with the streams.
+    #
+    # @return [ Array<SSH::Stream> ] nil if &block is given.
+    def popen2e(cmd)
+      __popen2__(cmd, EXT_MERGE)
+    end
+
+    # Open stdin, stdout, and stderr streams and start remote executable.
+    #
+    # @param [ String ] cmd    The command to execute.
+    # @param [ Proc ]   &block If given it will be invoked with the streams.
+    #
+    # @return [ Array<SSH::Stream> ] nil if &block is given.
+    def popen3(cmd)
+      ok = request('exec', cmd, EXT_NORMAL)
+      io = Stream.new(self, Stream::STDIO)
+      er = Stream.new(self, Stream::STDERR)
+      block_given? ? yield(io, er, ok) : [io, er, ok]
     end
 
     # Captures the standard output of a command.
@@ -136,12 +168,10 @@ module SSH
     #
     # @return [ String ] nil if the subsystem could not be requested.
     def capture3(cmd, opts = {})
-      suc = request('exec', cmd, EXT_NORMAL)
-      out = read(stream: STDOUT, chomp: opts[:chomp]) if suc
-      err = read(stream: STDERR, chomp: opts[:chomp]) if suc
-      [out, err, suc]
-    ensure
-      yield(out, err, suc) if block_given?
+      ok = request('exec', cmd, EXT_NORMAL)
+      io = Stream.new(self, Stream::STDIO).gets(chomp: opts[:chomp])  if ok
+      er = Stream.new(self, Stream::STDERR).gets(chomp: opts[:chomp]) if ok
+      block_given? ? yield(io, er, ok) : [io, er, ok]
     end
 
     # Syntactic sugar for requesting that a subsystem be started. Subsystems are
@@ -154,25 +184,38 @@ module SSH
     #
     # @return [ Boolean ] true if the subsystem could be requested.
     def subsystem(subsystem, ext_data = EXT_NORMAL)
-      suc = request('subsystem', subsystem, ext_data)
+      ok = request('subsystem', subsystem, ext_data)
     ensure
-      yield(suc) if block_given?
+      yield(ok) if block_given?
     end
 
     private
 
+    # Open stdin, stdout, and stderr streams and start remote executable.
+    #
+    # @param [ String ] cmd       The command to execute.
+    # @param [ Int ]    ext_data  How to handle extended data (stderr).
+    #                             Defaults to: EXT_NORMAL
+    #
+    # @return [ Array<SSH::Stream> ] nil if &block is given.
+    def __popen2__(cmd, ext_data)
+      ok = request('exec', cmd, ext_data)
+      io = Stream.new(self, Stream::STDIO)
+      block_given? ? yield(io, ok) : [io, ok]
+    end
+
     # Captures the standard output and the standard error of a command.
     #
-    # @param [ String ]         cmd  The command to execute.
-    # @param [ Hash<Symbol, _>] opts Additional options.
+    # @param [ String ] cmd       The command to execute.
+    # @param [ Hash]    opts      Additional options.
+    # @param [ Int ]    ext_data  How to handle extended data (stderr).
+    #                             Defaults to: EXT_NORMAL
     #
     # @return [ String ] nil if the subsystem could not be requested.
     def __capture2__(cmd, opts, ext_data)
-      suc = request('exec', cmd, ext_data)
-      out = read(stream: STDOUT, chomp: opts[:chomp]) if suc
-      [out, suc]
-    ensure
-      yield(out, suc) if block_given?
+      ok = request('exec', cmd, ext_data)
+      io = Stream.new(self).gets(chomp: opts[:chomp]) if ok
+      block_given? ? yield(io, ok) : [io, ok]
     end
   end
 end
