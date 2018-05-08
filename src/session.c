@@ -65,8 +65,13 @@ mrb_ssh_session_free(mrb_state *mrb, void *p)
     ssh = (mrb_ssh_t *)p;
 
     if (mrb_ssh_initialized()) {
-        libssh2_session_disconnect(ssh->session, NULL);
-        libssh2_session_free(ssh->session);
+        while (libssh2_session_disconnect(ssh->session, NULL) == LIBSSH2_ERROR_EAGAIN) {
+            mrb_ssh_wait_socket(ssh);
+        };
+
+        while (libssh2_session_free(ssh->session) == LIBSSH2_ERROR_EAGAIN) {
+            mrb_ssh_wait_socket(ssh);
+        };
     }
 
     mrb_ssh_close_socket(ssh->sock);
