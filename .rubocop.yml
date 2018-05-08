@@ -23,6 +23,9 @@
 Style/ParallelAssignment:
   Enabled: false
 
+Style/NumericPredicate:
+  EnforcedStyle: comparison
+
 Style/RescueModifier:
   Enabled: false
 
