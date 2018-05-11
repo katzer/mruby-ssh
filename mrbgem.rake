@@ -68,7 +68,7 @@ end
 # @return [ Void ]
 def download_mbedtls(dir, version = 'head')
   if version == 'head'
-    sh "git clone git://github.com/ARMmbed/mbedtls.git #{dir}/mbedtls"
+    sh "git clone --depth 1 git://github.com/ARMmbed/mbedtls.git #{dir}/mbedtls"
   else
     sh "curl -s --fail --retry 3 --retry-delay 1 https://tls.mbed.org/download/mbedtls-#{version}-apache.tgz | tar xzC . && mv mbedtls-#{version} #{dir}/mbedtls" # rubocop:disable LineLength
   end
@@ -83,7 +83,7 @@ end
 # @return [ Void ]
 def download_ssh2(dir, version = 'head')
   if version == 'head'
-    sh "git clone git://github.com/libssh2/libssh2.git #{dir}/ssh2"
+    sh "git clone --depth 1 git://github.com/libssh2/libssh2.git #{dir}/ssh2"
   else
     sh "curl -s --fail --retry 3 --retry-delay 1 https://www.libssh2.org/download/libssh2-#{version}.tar.gz | tar xzC . && mv libssh2-#{version} #{dir}/ssh2" # rubocop:disable LineLength
   end
