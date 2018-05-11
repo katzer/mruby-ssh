@@ -107,8 +107,6 @@ assert 'SSH::Channel#properties' do
 end
 
 SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
-  rb_in_path = open_channel(ssh) { |ch| ch.exec('ruby -v') }.close(true) == 0
-
   assert 'SSH::Channel#open' do
     channel = SSH::Channel.new(ssh)
 
@@ -117,6 +115,8 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     assert_nothing_raised { channel.open }
     assert_true channel.open?
     assert_raise(RuntimeError) { channel.open }
+
+    channel.close
   end
 
   assert 'SSH::Channel#request' do
@@ -125,6 +125,8 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
 
     channel = open_channel(ssh)
     assert_nothing_raised { channel.request('shell') }
+
+    channel.close
   end
 
   assert 'SSH::Channel#subsystem' do
@@ -133,6 +135,8 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
 
     channel = open_channel(ssh)
     assert_nothing_raised { channel.subsystem('sftp') }
+
+    channel.close
   end
 
   assert 'SSH::Channel#exec' do
@@ -141,13 +145,18 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
 
     channel = open_channel(ssh)
     assert_equal "ETNA\n", channel.exec('echo ETNA')
+    channel.close
 
     channel = open_channel(ssh)
     assert_equal "ETNA\n", channel.exec('echo ETNA', chomp: false)
+    channel.close
 
     channel = open_channel(ssh)
     assert_equal 'ETNA', channel.exec('echo ETNA', chomp: true)
+    channel.close
   end
+
+  rb_in_path = open_channel(ssh) { |ch| ch.exec('ruby -v') }.close(true) == 0
 
   assert 'SSH::Channel#capture2' do
     channel  = open_channel(ssh)
@@ -155,6 +164,8 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
 
     assert_equal "ETNA\n", out
     assert_true suc
+
+    channel.close
 
     channel = SSH::Channel.new(ssh)
     assert_raise(RuntimeError) { channel.capture2('echo ETNA') }
@@ -171,6 +182,8 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
 
     assert_equal '11', out
     assert_true suc
+
+    channel.close
 
     channel = SSH::Channel.new(ssh)
     assert_raise(RuntimeError) { channel.capture2e('echo ETNA') }
@@ -190,6 +203,8 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     assert_equal '1', err
     assert_true suc
 
+    channel.close
+
     channel = SSH::Channel.new(ssh)
     assert_raise(RuntimeError) { channel.capture3('echo ETNA') }
   end
@@ -201,6 +216,8 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     assert_equal SSH::Stream::STDIO, io.id
     assert_equal "ETNA\n", io.read
     assert_true ok
+
+    io.close
 
     channel = SSH::Channel.new(ssh)
     assert_raise(RuntimeError) { channel.popen2('echo ETNA') }
@@ -219,6 +236,8 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     assert_equal SSH::Stream::STDIO, io.id
     assert_equal '11', io.gets(chomp: true)
     assert_true ok
+
+    channel.close
 
     channel = SSH::Channel.new(ssh)
     assert_raise(RuntimeError) { channel.popen2e('hostname') }
@@ -241,6 +260,8 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     assert_equal '1', er.gets(chomp: true) if rb_in_path
     assert_true ok
 
+    channel.close
+
     channel = SSH::Channel.new(ssh)
     assert_raise(RuntimeError) { channel.popen3('hostname') }
   end
@@ -253,14 +274,23 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     else
       skip ssh.last_error
     end
+
+    channel.close
   end
 
   assert 'SSH::Channel#eof' do
     channel = open_channel(ssh)
 
     assert_false channel.eof?
-    channel.eof(true)
-    assert_true channel.eof?
+
+    begin
+      channel.eof(true)
+      assert_true channel.eof?
+    rescue RuntimeError => e
+      skip e
+    ensure
+      channel.close
+    end
   end
 
   assert 'SSH::Channel#close' do
@@ -274,13 +304,12 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     assert_equal 0, channel.close(true)
     assert_true channel.closed?
 
+    channel.close
+    assert_false channel.open?
+    assert_nothing_raised { channel.close }
+
     channel = open_channel(ssh) { |ch| ch.exec('unknown') }
     assert_equal 127, channel.close(true)
     assert_true  channel.closed?
-
-    channel.open
-    ssh.close
-    assert_false channel.open?
-    assert_nothing_raised { channel.close }
   end
 end

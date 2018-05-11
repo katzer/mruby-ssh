@@ -47,8 +47,6 @@ assert 'SSH::Stream::STDERR' do
 end
 
 SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
-  irb_in_path = open_channel(ssh) { |ch| ch.exec('irb -v') }.close(true) == 0
-
   assert 'SSH::Stream#channel' do
     assert_kind_of SSH::Channel, SSH::Stream.new(open_channel(ssh)).channel
   end
@@ -102,6 +100,8 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     assert_equal "\n", io.getc
     assert_equal nil,  io.getc
   end
+
+  irb_in_path = open_channel(ssh) { |ch| ch.exec('irb -v') }.close(true) == 0
 
   assert 'SSH::Stream#write' do
     if irb_in_path
