@@ -119,11 +119,24 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     channel.close
   end
 
+  assert 'SSH::Channel#reopen' do
+    channel = SSH::Channel.new(ssh)
+
+    assert_raise(RuntimeError) { SSH::Channel.new(dummy).reopen }
+
+    channel.reopen
+    assert_true channel.open?
+    channel.close
+    assert_true channel.closed?
+    channel.reopen
+    assert_true channel.open?
+  end
+
   assert 'SSH::Channel#request' do
     channel = SSH::Channel.new(ssh)
     assert_raise(RuntimeError) { channel.request('shell') }
 
-    channel = open_channel(ssh)
+    channel.reopen
     assert_nothing_raised { channel.request('shell') }
 
     channel.close
@@ -133,7 +146,7 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     channel = SSH::Channel.new(ssh)
     assert_raise(RuntimeError) { channel.subsystem('sftp') }
 
-    channel = open_channel(ssh)
+    channel.reopen
     assert_nothing_raised { channel.subsystem('sftp') }
 
     channel.close
@@ -143,16 +156,15 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     channel = SSH::Channel.new(ssh)
     assert_raise(RuntimeError) { channel.exec('echo ETNA') }
 
-    channel = open_channel(ssh)
+    channel.reopen
     assert_equal "ETNA\n", channel.exec('echo ETNA')
-    channel.close
 
-    channel = open_channel(ssh)
+    channel.reopen
     assert_equal "ETNA\n", channel.exec('echo ETNA', chomp: false)
-    channel.close
 
-    channel = open_channel(ssh)
+    channel.reopen
     assert_equal 'ETNA', channel.exec('echo ETNA', chomp: true)
+
     channel.close
   end
 

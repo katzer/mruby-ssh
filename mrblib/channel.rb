@@ -68,6 +68,15 @@ module SSH
     # @return [ Int ]
     attr_reader :local_maximum_window_size
 
+    # Open the channel but close before if already opened.
+    #
+    # @param [ String ] cmd See SSH::Channel#open.
+    #
+    # @return [ Void ]
+    def reopen(cmd = nil)
+      close(true) && open(cmd)
+    end
+
     # If the channel is connected to the host.
     #
     # @return [ Boolean ]

@@ -114,11 +114,11 @@ mrb_ssh_f_open (mrb_state *mrb, mrb_value self)
     mrb_ssh_channel_t *data;
     mrb_value session, type;
 
-    mrb_get_args(mrb, "|s!", &msg, &msg_len);
-
     if (DATA_PTR(self)) {
         mrb_raise(mrb, E_RUNTIME_ERROR, "SSH Channel already open.");
     }
+
+    mrb_get_args(mrb, "|s!", &msg, &msg_len);
 
     session = mrb_attr_get(mrb, self, SYM_SESSION);
     ssh     = DATA_PTR(session);
