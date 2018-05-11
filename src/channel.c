@@ -27,6 +27,7 @@
 #include "mruby/data.h"
 #include "mruby/class.h"
 #include "mruby/string.h"
+#include "mruby/variable.h"
 #include "mruby/ext/ssh.h"
 
 #include <stdlib.h>
@@ -36,6 +37,7 @@ static mrb_sym SYM_SESSION;
 static mrb_sym SYM_TYPE;
 static mrb_sym SYM_WIN_SIZE;
 static mrb_sym SYM_PKG_SIZE;
+static mrb_sym SYM_EXITSTATUS;
 static mrb_value KEY_CHOMP;
 static mrb_value KEY_STREAM;
 
@@ -154,6 +156,7 @@ mrb_ssh_f_open (mrb_state *mrb, mrb_value self)
     data->channel = channel;
 
     mrb_data_init(self, data, &mrb_ssh_channel_type);
+    mrb_iv_set(mrb, self, SYM_EXITSTATUS, mrb_nil_value());
 
     return mrb_nil_value();
 }
@@ -277,7 +280,9 @@ mrb_ssh_f_close (mrb_state *mrb, mrb_value self)
     DATA_PTR(self)  = NULL;
     DATA_TYPE(self) = NULL;
 
-    return mrb_fixnum_value(rc);
+    mrb_iv_set(mrb, self, SYM_EXITSTATUS, mrb_fixnum_value(rc));
+
+    return mrb_attr_get(mrb, self, SYM_EXITSTATUS);
 }
 
 static mrb_value
@@ -301,12 +306,13 @@ mrb_mruby_ssh_channel_init (mrb_state *mrb)
 
     MRB_SET_INSTANCE_TT(cls, MRB_TT_DATA);
 
-    SYM_SESSION  = mrb_intern_static(mrb, "@session", 8);
-    SYM_TYPE     = mrb_intern_static(mrb, "@type", 5);
-    SYM_PKG_SIZE = mrb_intern_static(mrb, "@local_maximum_packet_size", 26);
-    SYM_WIN_SIZE = mrb_intern_static(mrb, "@local_maximum_window_size", 26);
-    KEY_CHOMP    = mrb_symbol_value(mrb_intern_static(mrb, "chomp", 5));
-    KEY_STREAM   = mrb_symbol_value(mrb_intern_static(mrb, "stream", 6));
+    SYM_SESSION    = mrb_intern_static(mrb, "@session", 8);
+    SYM_TYPE       = mrb_intern_static(mrb, "@type", 5);
+    SYM_EXITSTATUS = mrb_intern_static(mrb, "@exitstatus", 11);
+    SYM_PKG_SIZE   = mrb_intern_static(mrb, "@local_maximum_packet_size", 26);
+    SYM_WIN_SIZE   = mrb_intern_static(mrb, "@local_maximum_window_size", 26);
+    KEY_CHOMP      = mrb_symbol_value(mrb_intern_static(mrb, "chomp", 5));
+    KEY_STREAM     = mrb_symbol_value(mrb_intern_static(mrb, "stream", 6));
 
     mrb_define_method(mrb, cls, "open",    mrb_ssh_f_open,    MRB_ARGS_OPT(1));
     mrb_define_method(mrb, cls, "request", mrb_ssh_f_request, MRB_ARGS_ARG(1,1));

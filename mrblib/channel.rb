@@ -30,19 +30,19 @@ module SSH
     # @param [ String ] type Channel type to open. Typically one of
     #                        session, direct-tcpip, or tcpip-forward.
     #                        Defaults to: session
-    # @param [ Int ] max_pkg_size Max number of bytes remote host is allowed
-    #                             to send in a single packet.
-    #                             Defaults to: PACKET_DEFAULT
-    # @param [ Int ] max_win_size Max amount of unacknowledged data remote host
-    #                             is allowed to send before receiving an packet.
-    #                             Defaults to: WINDOW_DEFAULT
+    # @param [ Int ] pkg_size Max number of bytes remote host is allowed
+    #                         to send in a single packet.
+    #                         Defaults to: PACKET_DEFAULT
+    # @param [ Int ] win_size Max amount of unacknowledged data remote host
+    #                         is allowed to send before receiving an packet.
+    #                         Defaults to: WINDOW_DEFAULT
     #
     # @return [ Void ]
-    def initialize(session, type = :session, max_pkg_size = nil, max_win_size = nil)
+    def initialize(session, type = :session, pkg_size = nil, win_size = nil)
       @session                   = session
       @type                      = type.to_s.freeze
-      @local_maximum_packet_size = max_pkg_size || PACKET_DEFAULT
-      @local_maximum_window_size = max_win_size || WINDOW_DEFAULT
+      @local_maximum_packet_size = pkg_size || PACKET_DEFAULT
+      @local_maximum_window_size = win_size || WINDOW_DEFAULT
       @properties                = {}
     end
 
@@ -56,6 +56,11 @@ module SSH
     #
     # @return [ Hash ]
     attr_reader :properties
+
+    # The remote exit code
+    #
+    # @return [ Int ]
+    attr_reader :exitstatus
 
     # The maximum packet size that the local host can receive.
     #
@@ -111,10 +116,9 @@ module SSH
     #
     # @return [ String ] nil if the subsystem could not be requested.
     def exec(cmd, opts = {})
-      ok = request('exec', cmd, EXT_IGNORE)
-      io = Stream.new(self).gets(chomp: opts[:chomp]) if ok
+      Stream.new(self).gets(opts) if request('exec', cmd, EXT_IGNORE)
     ensure
-      yield(io, ok) if block_given?
+      close(true)
     end
 
     # Open stdin and stdout streams and start remote executable.
@@ -123,8 +127,8 @@ module SSH
     # @param [ Proc ]   &block If given it will be invoked with the streams.
     #
     # @return [ Array<SSH::Stream> ] nil if &block is given.
-    def popen2(cmd)
-      __popen2__(cmd, EXT_IGNORE)
+    def popen2(cmd, &block)
+      __popen__(cmd, EXT_IGNORE, &block)
     end
 
     # Open stdin and stdout streams and start remote executable.
@@ -133,8 +137,8 @@ module SSH
     # @param [ Proc ]   &block If given it will be invoked with the streams.
     #
     # @return [ Array<SSH::Stream> ] nil if &block is given.
-    def popen2e(cmd)
-      __popen2__(cmd, EXT_MERGE)
+    def popen2e(cmd, &block)
+      __popen__(cmd, EXT_MERGE, &block)
     end
 
     # Open stdin, stdout, and stderr streams and start remote executable.
@@ -143,11 +147,8 @@ module SSH
     # @param [ Proc ]   &block If given it will be invoked with the streams.
     #
     # @return [ Array<SSH::Stream> ] nil if &block is given.
-    def popen3(cmd)
-      ok = request('exec', cmd, EXT_NORMAL)
-      io = Stream.new(self, Stream::STDIO)
-      er = Stream.new(self, Stream::STDERR)
-      block_given? ? yield(io, er, ok) : [io, er, ok]
+    def popen3(cmd, &block)
+      __popen__(cmd, EXT_NORMAL, &block)
     end
 
     # Captures the standard output of a command.
@@ -157,7 +158,7 @@ module SSH
     #
     # @return [ String ] nil if the subsystem could not be requested.
     def capture2(cmd, opts = {})
-      __capture2__(cmd, opts, EXT_IGNORE)
+      __capture__(cmd, opts, EXT_IGNORE)
     end
 
     # Captures the standard output and the standard error of a command.
@@ -167,7 +168,7 @@ module SSH
     #
     # @return [ String ] nil if the subsystem could not be requested.
     def capture2e(cmd, opts = {})
-      __capture2__(cmd, opts, EXT_MERGE)
+      __capture__(cmd, opts, EXT_MERGE)
     end
 
     # Captures the standard output and the standard error of a command.
@@ -177,10 +178,7 @@ module SSH
     #
     # @return [ String ] nil if the subsystem could not be requested.
     def capture3(cmd, opts = {})
-      ok = request('exec', cmd, EXT_NORMAL)
-      io = Stream.new(self, Stream::STDIO).gets(chomp: opts[:chomp])  if ok
-      er = Stream.new(self, Stream::STDERR).gets(chomp: opts[:chomp]) if ok
-      block_given? ? yield(io, er, ok) : [io, er, ok]
+      __capture__(cmd, opts, EXT_NORMAL)
     end
 
     # Syntactic sugar for requesting that a subsystem be started. Subsystems are
@@ -188,43 +186,55 @@ module SSH
     # transport.
     #
     # @param [ String ] subsystem The name of the subsystem.
-    # @param [ Int ]    ext_data  How to handle extended data (stderr).
+    # @param [ Int ]    ext       How to handle extended data (stderr).
     #                             Defaults to: EXT_NORMAL
     #
     # @return [ Boolean ] true if the subsystem could be requested.
-    def subsystem(subsystem, ext_data = EXT_NORMAL)
-      ok = request('subsystem', subsystem, ext_data)
+    def subsystem(subsystem, ext = EXT_NORMAL, &block)
+      ok = request('subsystem', subsystem, ext)
+      block ? yield(ok) : ok
     ensure
-      yield(ok) if block_given?
+      close if block
     end
 
     private
 
     # Open stdin, stdout, and stderr streams and start remote executable.
     #
-    # @param [ String ] cmd       The command to execute.
-    # @param [ Int ]    ext_data  How to handle extended data (stderr).
-    #                             Defaults to: EXT_NORMAL
+    # @param [ String ] cmd  The command to execute.
+    # @param [ Int ]    ext  How to handle extended data (stderr).
+    #                        Defaults to: EXT_NORMAL
     #
     # @return [ Array<SSH::Stream> ] nil if &block is given.
-    def __popen2__(cmd, ext_data)
-      ok = request('exec', cmd, ext_data)
-      io = Stream.new(self, Stream::STDIO)
-      block_given? ? yield(io, ok) : [io, ok]
+    def __popen__(cmd, ext, &block)
+      suc = request('exec', cmd, ext)
+      res = []
+
+      res << Stream.new(self, Stream::STDIO)
+      res << Stream.new(self, Stream::STDERR) if ext == EXT_NORMAL
+      res << suc
+
+      block ? yield(*res) : res
+    ensure
+      close if block
     end
 
     # Captures the standard output and the standard error of a command.
     #
-    # @param [ String ] cmd       The command to execute.
-    # @param [ Hash]    opts      Additional options.
-    # @param [ Int ]    ext_data  How to handle extended data (stderr).
-    #                             Defaults to: EXT_NORMAL
+    # @param [ String ] cmd  The command to execute.
+    # @param [ Hash]    opts Additional options.
+    # @param [ Int ]    ext  How to handle extended data (stderr).
     #
     # @return [ String ] nil if the subsystem could not be requested.
-    def __capture2__(cmd, opts, ext_data)
-      ok = request('exec', cmd, ext_data)
-      io = Stream.new(self).gets(chomp: opts[:chomp]) if ok
-      block_given? ? yield(io, ok) : [io, ok]
+    def __capture__(cmd, opts, ext)
+      suc = request('exec', cmd, ext)
+      res = []
+
+      res << Stream.new(self, 0).gets(opts) if suc
+      res << Stream.new(self, 1).gets(opts) if suc && ext == EXT_NORMAL
+      res << suc
+    ensure
+      close(true)
     end
   end
 end

@@ -168,7 +168,7 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     channel.close
   end
 
-  rb_in_path = open_channel(ssh) { |ch| ch.exec('ruby -v') }.close(true) == 0
+  rb_in_path = open_channel(ssh) { |ch| ch.exec('ruby -v') }.exitstatus == 0
 
   assert 'SSH::Channel#capture2' do
     channel  = open_channel(ssh)
@@ -305,6 +305,23 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     end
   end
 
+  assert 'SSH::Channel#exitstatus' do
+    channel = SSH::Channel.new(ssh)
+    assert_nil channel.exitstatus
+
+    channel.open
+    assert_nil channel.exitstatus
+
+    channel.exec('unknown')
+    assert_equal 127, channel.exitstatus
+
+    channel.reopen
+    assert_nil channel.exitstatus
+
+    channel.close
+    assert_equal 0, channel.exitstatus
+  end
+
   assert 'SSH::Channel#close' do
     channel = SSH::Channel.new(ssh)
 
@@ -321,7 +338,7 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     assert_nothing_raised { channel.close }
 
     channel = open_channel(ssh) { |ch| ch.exec('unknown') }
-    assert_equal 127, channel.close(true)
-    assert_true  channel.closed?
+    assert_equal 127, channel.exitstatus
+    assert_true channel.closed?
   end
 end
