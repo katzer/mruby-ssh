@@ -28,6 +28,8 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   spec.export_include_paths << "#{dir}/ssh2/include"
   spec.cc.include_paths += %W[#{dir}/mbedtls/include #{dir}/ssh2/include]
 
+  spec.mruby.cc.defines << 'HAVE_MRB_SSH_H'
+
   if target_win32?
     spec.cc.include_paths << "#{dir}/ssh2/win32"
     spec.linker.libraries += %w[ws2_32 advapi32]
