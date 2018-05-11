@@ -22,8 +22,6 @@
 
 image: Visual Studio 2017
 
-version: "{build}"
-
 environment:
   global:
     TOOLCHAIN: visualcpp
