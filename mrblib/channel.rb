@@ -192,7 +192,7 @@ module SSH
     # @return [ Boolean ] true if the subsystem could be requested.
     def subsystem(subsystem, ext = EXT_NORMAL, &block)
       ok = request('subsystem', subsystem, ext)
-      block ? yield(ok) : ok
+      block ? block.call(ok) && nil : ok
     ensure
       close if block
     end
@@ -214,7 +214,7 @@ module SSH
       res << Stream.new(self, Stream::STDERR) if ext == EXT_NORMAL
       res << suc
 
-      block ? yield(*res) : res
+      block ? block.call(*res) && nil : res
     ensure
       close if block
     end
