@@ -38,14 +38,14 @@ assert 'SSH.start' do
   assert_include SSH.public_methods, :start
 end
 
-assert 'SSH::TIMEOUT_ERROR' do
-  assert_include SSH.constants, :TIMEOUT_ERROR
+assert 'SSH::ERROR_TIMEOUT' do
+  assert_include SSH.constants, :ERROR_TIMEOUT
 end
 
-assert 'SSH::DISCONNECT_ERROR' do
-  assert_include SSH.constants, :DISCONNECT_ERROR
+assert 'SSH::ERROR_DISCONNECT_ERROR' do
+  assert_include SSH.constants, :ERROR_DISCONNECT
 end
 
-assert 'SSH::AUTHENTICATION_ERROR' do
-  assert_include SSH.constants, :AUTHENTICATION_ERROR
+assert 'SSH::ERROR_AUTHENTICATION_ERROR' do
+  assert_include SSH.constants, :ERROR_AUTHENTICATION
 end

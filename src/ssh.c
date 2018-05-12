@@ -106,9 +106,9 @@ mrb_mruby_ssh_gem_init (mrb_state *mrb)
     mrb_define_class_method(mrb, ssh, "shutdown", mrb_ssh_f_shutdown, MRB_ARGS_NONE());
     mrb_define_class_method(mrb, ssh, "ready?",  mrb_ssh_f_ready,     MRB_ARGS_NONE());
 
-    mrb_define_const(mrb, ssh, "TIMEOUT_ERROR",        mrb_fixnum_value(LIBSSH2_ERROR_TIMEOUT));
-    mrb_define_const(mrb, ssh, "DISCONNECT_ERROR",     mrb_fixnum_value(LIBSSH2_ERROR_SOCKET_DISCONNECT));
-    mrb_define_const(mrb, ssh, "AUTHENTICATION_ERROR", mrb_fixnum_value(LIBSSH2_ERROR_AUTHENTICATION_FAILED));
+    mrb_define_const(mrb, ssh, "ERROR_TIMEOUT",        mrb_fixnum_value(LIBSSH2_ERROR_TIMEOUT));
+    mrb_define_const(mrb, ssh, "ERROR_DISCONNECT",     mrb_fixnum_value(LIBSSH2_ERROR_SOCKET_DISCONNECT));
+    mrb_define_const(mrb, ssh, "ERROR_AUTHENTICATION", mrb_fixnum_value(LIBSSH2_ERROR_AUTHENTICATION_FAILED));
 
     mrb_mruby_ssh_session_init(mrb);
     mrb_mruby_ssh_channel_init(mrb);
