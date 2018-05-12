@@ -25,6 +25,7 @@
 
 #include "mruby.h"
 #include "mruby/data.h"
+#include "mruby/hash.h"
 #include "mruby/class.h"
 #include "mruby/ext/ssh.h"
 #include "mruby/variable.h"
@@ -167,7 +168,7 @@ mrb_ssh_init_socket (int family, const char *host, int port, int *ptr)
 }
 
 static int
-mrb_ssh_init_session (int sock, LIBSSH2_SESSION **ptr, int blocking, long timeout)
+mrb_ssh_init_session (int sock, LIBSSH2_SESSION **ptr, int blocking, long timeout, int compress, int sigpipe)
 {
     LIBSSH2_SESSION *session;
     int rc;
@@ -181,6 +182,8 @@ mrb_ssh_init_session (int sock, LIBSSH2_SESSION **ptr, int blocking, long timeou
 
     libssh2_session_set_blocking(session, blocking);
     libssh2_session_set_timeout(session, timeout);
+    libssh2_session_flag(session, LIBSSH2_FLAG_SIGPIPE, sigpipe);
+    libssh2_session_flag(session, LIBSSH2_FLAG_COMPRESS, compress);
 
     while ((rc = libssh2_session_handshake(session, sock)) == LIBSSH2_ERROR_EAGAIN);
 
@@ -226,31 +229,34 @@ kbd_func (const char *name, int name_len, const char *inst, int inst_len,
 static mrb_value
 mrb_ssh_f_connect (mrb_state *mrb, mrb_value self)
 {
-    mrb_int port, host_len;
-    mrb_bool port_given;
+    mrb_int host_len;
     char* host;
+    mrb_value opts;
 
     mrb_ssh_t *ssh;
     LIBSSH2_SESSION *session;
-    int sock, blocking;
+    int sock, blocking = 1, port = 22, compress = 0, sigpipe = 0;
+    long timeout = 15000;
 
     if (DATA_PTR(self)) {
         mrb_raise(mrb, E_RUNTIME_ERROR, "SSH session already connected.");
     }
 
-    mrb_get_args(mrb, "s|i?", &host, &host_len, &port, &port_given);
+    mrb_get_args(mrb, "s|H!", &host, &host_len, &opts);
 
-    if (!port_given) {
-        port = 22;
+    if (mrb_hash_p(opts)) {
+        port     = (int) mrb_fixnum(mrb_hash_fetch(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "port")), mrb_fixnum_value(port)));
+        timeout  = (long)mrb_fixnum(mrb_hash_fetch(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "timeout")), mrb_fixnum_value(timeout)));
+        blocking = mrb_type(mrb_hash_fetch(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "block")), mrb_true_value())) == MRB_TT_TRUE;
+        compress = mrb_type(mrb_hash_fetch(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "compress")), mrb_false_value())) == MRB_TT_TRUE;
+        sigpipe  = mrb_type(mrb_hash_fetch(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "sigpipe")), mrb_false_value())) == MRB_TT_TRUE;
     }
 
     if (mrb_ssh_init_socket(AF_INET, host, port, &sock) != 0) {
         mrb_raise(mrb, E_RUNTIME_ERROR, "Failed to connect.");
     }
 
-    blocking = mrb_test(mrb_attr_get(mrb, self, mrb_intern_static(mrb, "block", 5)));
-
-    if (mrb_ssh_init_session(sock, &session, blocking, 15000) != 0) {
+    if (mrb_ssh_init_session(sock, &session, blocking, timeout, compress, sigpipe) != 0) {
         mrb_raise(mrb, E_RUNTIME_ERROR, "Could not init ssh session.");
     }
 
@@ -341,43 +347,11 @@ mrb_ssh_f_logged (mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
-mrb_ssh_f_block (mrb_state *mrb, mrb_value self)
-{
-    mrb_ssh_t *ssh = DATA_PTR(self);
-
-    if (ssh) {
-        libssh2_session_set_blocking(ssh->session, 1);
-    }
-
-    mrb_iv_set(mrb, self, mrb_intern_static(mrb, "block", 5),
-                          mrb_true_value());
-
-    return mrb_nil_value();
-}
-
-static mrb_value
-mrb_ssh_f_unblock (mrb_state *mrb, mrb_value self)
-{
-    mrb_ssh_t *ssh = DATA_PTR(self);
-
-    if (ssh) {
-        libssh2_session_set_blocking(ssh->session, 0);
-    }
-
-    mrb_iv_remove(mrb, self, mrb_intern_static(mrb, "block", 5));
-
-    return mrb_nil_value();
-}
-
-static mrb_value
 mrb_ssh_f_blocking (mrb_state *mrb, mrb_value self)
 {
     mrb_ssh_t *ssh = DATA_PTR(self);
 
     if (ssh && libssh2_session_get_blocking(ssh->session))
-        return mrb_true_value();
-
-    if (mrb_test(mrb_attr_get(mrb, self, mrb_intern_static(mrb, "block", 5))))
         return mrb_true_value();
 
     return mrb_false_value();
@@ -463,8 +437,6 @@ mrb_mruby_ssh_session_init (mrb_state *mrb)
     mrb_define_method(mrb, cls, "closed?",     mrb_ssh_f_closed,  MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "login",       mrb_ssh_f_login,   MRB_ARGS_ARG(1,4));
     mrb_define_method(mrb, cls, "logged_in?",  mrb_ssh_f_logged,  MRB_ARGS_NONE());
-    mrb_define_method(mrb, cls, "block",       mrb_ssh_f_block,   MRB_ARGS_NONE());
-    mrb_define_method(mrb, cls, "unblock",     mrb_ssh_f_unblock, MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "blocking?",   mrb_ssh_f_blocking,MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "last_errno",  mrb_ssh_f_last_errno, MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "last_error",  mrb_ssh_f_last_error, MRB_ARGS_NONE());

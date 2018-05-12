@@ -32,11 +32,10 @@ module SSH
     def initialize(host = nil, opts = {})
       @properties = (opts[:properties] || {}).dup
 
-      block if opts[:block] != false
       return unless host
 
       SSH.startup
-      connect(host, opts[:port] || PORT)
+      connect(host, opts)
 
       __login__(opts)
     end

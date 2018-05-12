@@ -104,7 +104,7 @@ mrb_mruby_ssh_gem_init (mrb_state *mrb)
 
     mrb_define_class_method(mrb, ssh, "startup",  mrb_ssh_f_startup,  MRB_ARGS_NONE());
     mrb_define_class_method(mrb, ssh, "shutdown", mrb_ssh_f_shutdown, MRB_ARGS_NONE());
-    mrb_define_class_method(mrb, ssh, "ready?",  mrb_ssh_f_ready,     MRB_ARGS_NONE());
+    mrb_define_class_method(mrb, ssh, "ready?",   mrb_ssh_f_ready,    MRB_ARGS_NONE());
 
     mrb_define_const(mrb, ssh, "ERROR_TIMEOUT",        mrb_fixnum_value(LIBSSH2_ERROR_TIMEOUT));
     mrb_define_const(mrb, ssh, "ERROR_DISCONNECT",     mrb_fixnum_value(LIBSSH2_ERROR_SOCKET_DISCONNECT));
