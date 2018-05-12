@@ -25,6 +25,7 @@
 
 #include "mruby.h"
 #include "mruby/data.h"
+#include "mruby/hash.h"
 #include "mruby/class.h"
 #include "mruby/string.h"
 #include "mruby/variable.h"
@@ -194,6 +195,65 @@ mrb_ssh_f_request (mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
+mrb_ssh_f_pty (mrb_state *mrb, mrb_value self)
+{
+    int rc;
+    const char *term       = (const char *)"vanilla";
+    unsigned int term_len  = 7;
+    const char *modes      = NULL;
+    unsigned int modes_len = 0;
+    mrb_value opts, mod    = mrb_nil_value();
+    mrb_value terminal     = mrb_nil_value();
+    int width              = LIBSSH2_TERM_WIDTH;
+    int width_px           = LIBSSH2_TERM_WIDTH_PX;
+    int height             = LIBSSH2_TERM_HEIGHT;
+    int height_px          = LIBSSH2_TERM_HEIGHT_PX;
+
+    mrb_ssh_t *ssh          = mrb_ssh_session(mrb, self);
+    mrb_ssh_channel_t *data = mrb_ssh_channel_bang(mrb, self);
+
+    mrb_get_args(mrb, "|H!", &opts);
+
+    while (libssh2_channel_handle_extended_data2(data->channel, LIBSSH2_CHANNEL_EXTENDED_DATA_NORMAL) == LIBSSH2_ERROR_EAGAIN) {
+        mrb_ssh_wait_socket(ssh);
+    }
+
+    if (mrb_hash_p(opts)) {
+        mod       = mrb_hash_get(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "modes")));
+        terminal  = mrb_hash_get(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "term")));
+        width     = (int) mrb_fixnum(mrb_hash_fetch(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "chars_wide")), mrb_fixnum_value(LIBSSH2_TERM_WIDTH)));
+        height    = (int) mrb_fixnum(mrb_hash_fetch(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "chars_high")), mrb_fixnum_value(LIBSSH2_TERM_HEIGHT)));
+        width_px  = (int) mrb_fixnum(mrb_hash_fetch(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "pixels_wide")), mrb_fixnum_value(LIBSSH2_TERM_WIDTH_PX)));
+        height_px = (int) mrb_fixnum(mrb_hash_fetch(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "pixels_high")), mrb_fixnum_value(LIBSSH2_TERM_HEIGHT_PX)));
+    }
+
+    if (mrb_test(mod)) {
+        modes     = RSTRING_PTR(mod);
+        modes_len = (unsigned int) RSTRING_LEN(mod);
+    }
+
+    if (mrb_test(terminal)) {
+        term     = RSTRING_PTR(terminal);
+        term_len = (unsigned int) RSTRING_LEN(terminal);
+    }
+
+    while ((rc = libssh2_channel_request_pty_ex(data->channel, term, term_len, modes, modes_len, width, height, width_px, height_px)) == LIBSSH2_ERROR_EAGAIN) {
+        mrb_ssh_wait_socket(ssh);
+    }
+
+    switch (rc) {
+        case LIBSSH2_ERROR_CHANNEL_REQUEST_DENIED:
+            return mrb_false_value();
+        case 0:
+            return mrb_true_value();
+        default:
+            mrb_ssh_raise_last_error(mrb, ssh);
+    }
+
+    return mrb_nil_value();
+}
+
+static mrb_value
 mrb_ssh_f_env (mrb_state *mrb, mrb_value self)
 {
     int rc;
@@ -316,6 +376,7 @@ mrb_mruby_ssh_channel_init (mrb_state *mrb)
 
     mrb_define_method(mrb, cls, "open",    mrb_ssh_f_open,    MRB_ARGS_OPT(1));
     mrb_define_method(mrb, cls, "request", mrb_ssh_f_request, MRB_ARGS_ARG(1,1));
+    mrb_define_method(mrb, cls, "request_pty", mrb_ssh_f_pty, MRB_ARGS_OPT(1));
     mrb_define_method(mrb, cls, "env",     mrb_ssh_f_env,     MRB_ARGS_REQ(2));
     mrb_define_method(mrb, cls, "eof?",    mrb_ssh_f_get_eof, MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "eof",     mrb_ssh_f_set_eof, MRB_ARGS_OPT(1));

@@ -322,6 +322,19 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     assert_equal 0, channel.exitstatus
   end
 
+  assert 'SSH::Channel#request_pty' do
+    channel = open_channel(ssh)
+
+    assert_true channel.request_pty
+    assert_equal "ETNA\r\n", channel.exec('echo ETNA')
+
+    channel.reopen
+    assert_true channel.request_pty(chars_wide: 2)
+    assert_equal "ET\r\nNA\r\n\r\n", channel.exec('echo ETNA', nil)
+
+    channel.close
+  end
+
   assert 'SSH::Channel#close' do
     channel = SSH::Channel.new(ssh)
 
