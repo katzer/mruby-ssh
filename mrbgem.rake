@@ -25,10 +25,9 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   spec.authors = 'Sebastian Katzer'
   spec.summary = 'SSH client for mruby'
 
-  spec.export_include_paths << "#{dir}/ssh2/include"
-  spec.cc.include_paths += %W[#{dir}/mbedtls/include #{dir}/ssh2/include]
-
   spec.mruby.cc.defines << 'HAVE_MRB_SSH_H'
+  spec.export_include_paths << "#{dir}/ssh2/include"
+  spec.cc.include_paths += Dir["#{dir}/{mbedtls/include,ssh2/include,zlib}"]
 
   if target_win32?
     spec.cc.include_paths << "#{dir}/ssh2/win32"
@@ -39,6 +38,10 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
     download_mbedtls(dir, ENV.fetch('MBET_VERSION', '2.9.0'))
   end
 
+  file "#{dir}/zlib" do
+    download_zlib(dir, ENV.fetch('ZLIB_VERSION', '1.2.11'))
+  end
+
   file "#{dir}/ssh2" => "#{dir}/mbedtls" do
     download_ssh2(dir, ENV.fetch('SSH2_VERSION', '1.8.0'))
     cp "#{dir}/libssh2_config.h", "#{dir}/ssh2/src/"
@@ -46,7 +49,13 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
 
   Rake::Task["#{dir}/ssh2"].invoke
 
-  spec.objs += Dir["#{dir}/{mbedtls/library,ssh2/src}/*.c"].map! do |f|
+  if spec.mruby.cc.defines.include? 'LIBSSH2_HAVE_ZLIB'
+    Rake::Task["#{dir}/zlib"].invoke
+  else
+    rm_rf "#{dir}/zlib"
+  end
+
+  spec.objs += Dir["#{dir}/{mbedtls/library,ssh2/src,zlib}/*.c"].map! do |f|
     f.relative_path_from(dir).pathmap("#{build_dir}/%X#{spec.exts.object}")
   end
 end
@@ -86,5 +95,20 @@ def download_ssh2(dir, version = 'head')
     sh "git clone --depth 1 git://github.com/libssh2/libssh2.git #{dir}/ssh2"
   else
     sh "curl -s --fail --retry 3 --retry-delay 1 https://www.libssh2.org/download/libssh2-#{version}.tar.gz | tar xzC . && mv libssh2-#{version} #{dir}/ssh2" # rubocop:disable LineLength
+  end
+end
+
+# Download zlib.
+#
+# @param [ String ] dir     The place where to place them.
+# @param [ String ] version The version to download.
+#                           Defaults to: head
+#
+# @return [ Void ]
+def download_zlib(dir, version = 'head')
+  if version == 'head'
+    sh "git clone --depth 1 git://github.com/madler/zlib.git #{dir}/zlib"
+  else
+    sh "curl -s --fail --retry 3 --retry-delay 1 http://zlib.net/zlib-#{version}.tar.gz | tar xzC . && mv zlib-#{version} #{dir}/zlib" # rubocop:disable LineLength
   end
 end
