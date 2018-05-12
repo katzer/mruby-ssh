@@ -25,9 +25,8 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   spec.authors = 'Sebastian Katzer'
   spec.summary = 'SSH client for mruby'
 
-  spec.mruby.cc.defines << 'HAVE_MRB_SSH_H'
+  spec.mruby.cc.defines     << 'HAVE_MRB_SSH_H'
   spec.export_include_paths << "#{dir}/ssh2/include"
-  spec.cc.include_paths += Dir["#{dir}/{mbedtls/include,ssh2/include,zlib}"]
 
   if target_win32?
     spec.cc.include_paths << "#{dir}/ssh2/win32"
@@ -54,6 +53,8 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   else
     rm_rf "#{dir}/zlib"
   end
+
+  spec.cc.include_paths += Dir["#{dir}/{mbedtls/include,ssh2/include,zlib}"]
 
   spec.objs += Dir["#{dir}/{mbedtls/library,ssh2/src,zlib}/*.c"].map! do |f|
     f.relative_path_from(dir).pathmap("#{build_dir}/%X#{spec.exts.object}")
