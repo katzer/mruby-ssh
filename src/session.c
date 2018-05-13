@@ -267,7 +267,7 @@ mrb_ssh_f_connect (mrb_state *mrb, mrb_value self)
     mrb_data_init(self, ssh, &mrb_ssh_session_type);
 
     mrb_iv_set(mrb, self, mrb_intern_static(mrb, "@host", 5),
-                          mrb_str_new_static(mrb, host, host_len));
+                          mrb_str_new(mrb, host, host_len));
 
     return mrb_nil_value();
 }
