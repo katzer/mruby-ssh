@@ -21,9 +21,6 @@
 # SOFTWARE.
 
 module SSH
-  # Default SSH port
-  PORT = 22
-
   # A synonym for SSH::Session.new, but with a mandatory host parameter.
   # If a block is given, it is passed the SSH object, which will be closed
   # when the block finishes, or when an exception is raised.

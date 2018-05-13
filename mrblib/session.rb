@@ -136,7 +136,7 @@ module SSH
     end
 
     # Requests that a new channel be opened. By default, the channel will be of
-    # type “session”, but if you know what you're doing you can select any of
+    # type "session", but if you know what you're doing you can select any of
     # the channel types supported by the SSH protocol.
     #
     # @param See SSH::Channel#initialize
@@ -147,7 +147,7 @@ module SSH
 
       channel.open(cmd)
 
-      block ? block.call(channel) && nil : channel
+      block ? yield(channel) && nil : channel
     ensure
       channel.close if block
     end
