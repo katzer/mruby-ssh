@@ -1,10 +1,6 @@
 # SSH client for mruby <br> [![Build Status](https://travis-ci.org/katzer/mruby-ssh.svg?branch=master)](https://travis-ci.org/katzer/mruby-ssh) [![Build status](https://ci.appveyor.com/api/projects/status/bkd5aem5ap1n22cs/branch/master?svg=true)](https://ci.appveyor.com/project/katzer/mruby-ssh/branch/master) [![codebeat badge](https://codebeat.co/badges/b7257079-893a-480e-b658-80d79419d429)](https://codebeat.co/projects/github-com-katzer-mruby-ssh-master)
 
-Inspired by [Net::SSH][net_ssh], empowers [mruby][mruby]
-
-The SSH client is based on [mruby-ssh][mruby_ssh] and [libssh2][libssh2]. The API design follows Net::SSH as much as possible.
-
-The resulting binary will be statically linked agains _libssh2_ and _mbedtls_. There are no external runtime dependencies and the code should run fine for Linux, Unix and Windows platform.
+Inspired by [Net::SSH][net_ssh], empowers [mruby][mruby].
 
 The snippet demontrates how to execute a command on the remote host:
 
@@ -33,6 +29,8 @@ MRuby::Gem::Specification.new('your-mrbgem') do |spec|
   spec.add_dependency 'mruby-ssh'
 end
 ```
+
+The resulting binary will be statically linked agains _libssh2_ and _mbedtls_. There are no external runtime dependencies and the code should run fine for Linux, Unix and Windows platform.
 
 ## Usage
 
