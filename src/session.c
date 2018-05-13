@@ -403,7 +403,7 @@ mrb_ssh_f_fingerprint (mrb_state *mrb, mrb_value self)
         strcat(fingerprint, key);
     }
 
-    return mrb_str_new_static(mrb, fingerprint, 59);
+    return mrb_str_new(mrb, fingerprint, 59);
 }
 
 static mrb_value

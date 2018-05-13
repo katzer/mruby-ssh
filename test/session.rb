@@ -36,6 +36,7 @@ assert 'SSH::Session#new' do
   assert_true ssh.connected?
   assert_true ssh.logged_in?
   assert_true ssh.blocking?
+  assert_equal 20, ssh.fingerprint.split.size
   assert_equal 59, ssh.fingerprint.length
   assert_equal 'test.rebex.net', ssh.host
 
@@ -127,11 +128,11 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
 
     channel.close
 
-    ret = ssh.open_channel do |channel|
+    ret = ssh.open_channel do |ch|
       called = true
 
-      assert_kind_of SSH::Channel, channel
-      assert_true channel.open?
+      assert_kind_of SSH::Channel, ch
+      assert_true ch.open?
     end
 
     assert_true called
