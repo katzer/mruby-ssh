@@ -120,6 +120,52 @@ end
 
 See [channel.rb](mrblib/channel.rb) and [channel.c](src/channel.c) for a complete list of available methods.
 
+### Compression
+
+Add the line below to your `build_config.rb`:
+
+```ruby
+MRuby::Build.new do |conf|
+  # ... (snip) ...
+  conf.cc.defines += %w[LIBSSH2_HAVE_ZLIB HAVE_UNISTD_H]
+end
+```
+
+Or add this line to your aplication's `mrbgem.rake`:
+
+```ruby
+MRuby::Gem::Specification.new('your-mrbgem') do |spec|
+  # ... (snip) ...
+  spec.mruby.cc.defines += %w[LIBSSH2_HAVE_ZLIB HAVE_UNISTD_H]
+end
+```
+
+Now initiate a new SSH session with `compress:true`:
+
+```ruby
+SSH.start('test.rebex.net', 'demo', password: 'password', compress: true)
+```
+
+### Threading
+
+To initiate SSH sessions within threads add the line below to your `build_config.rb`:
+
+```ruby
+MRuby::Build.new do |conf|
+  # ... (snip) ...
+  conf.cc.defines += %w[MBEDTLS_THREADING_PTHREAD MBEDTLS_THREADING_C]
+end
+```
+
+Or add this line to your aplication's `mrbgem.rake`:
+
+```ruby
+MRuby::Gem::Specification.new('your-mrbgem') do |spec|
+  # ... (snip) ...
+  spec.mruby.cc.defines += %w[MBEDTLS_THREADING_PTHREAD MBEDTLS_THREADING_C]
+end
+```
+
 ## Development
 
 Clone the repo:
