@@ -30,7 +30,7 @@ module SSH
   # @param [ Hash ]   opts See SSH::Session.new
   #
   # @return [ Net::FTP ]
-  def self.start(host, user = nil, opts = {})
+  def self.start(host = nil, user = nil, opts = {})
     opts[:user] = user if user
     session     = Session.new(host, opts)
 
