@@ -31,7 +31,6 @@
 #include "mruby/variable.h"
 
 #include <string.h>
-#include <stdlib.h>
 #include <libssh2.h>
 
 #ifdef _WIN32
@@ -77,7 +76,7 @@ mrb_ssh_session_free(mrb_state *mrb, void *p)
 
     mrb_ssh_close_socket(ssh->sock);
 
-    free(ssh);
+    mrb_free(mrb, ssh);
 }
 
 static mrb_data_type const mrb_ssh_session_type = { "SSH::Session", mrb_ssh_session_free };
@@ -141,7 +140,7 @@ mrb_ssh_host_to_ip (int family, const char *host)
 }
 
 static int
-mrb_ssh_init_socket (int family, const char *host, int port, int *ptr)
+mrb_ssh_init_socket (mrb_state *mrb, int family, const char *host, int port, int *ptr)
 {
     struct sockaddr_in sin;
     int sock, rc;
@@ -156,7 +155,7 @@ mrb_ssh_init_socket (int family, const char *host, int port, int *ptr)
         return -1;
 
     inet_pton(family, ip, &(sin.sin_addr));
-    free(ip);
+    mrb_free(mrb, ip);
 
     rc = connect(sock, (struct sockaddr*)(&sin), sizeof(struct sockaddr_in));
 
@@ -252,7 +251,7 @@ mrb_ssh_f_connect (mrb_state *mrb, mrb_value self)
         sigpipe  = mrb_type(mrb_hash_fetch(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "sigpipe")), mrb_false_value())) == MRB_TT_TRUE;
     }
 
-    if (mrb_ssh_init_socket(AF_INET, host, port, &sock) != 0) {
+    if (mrb_ssh_init_socket(mrb, AF_INET, host, port, &sock) != 0) {
         mrb_raise(mrb, E_RUNTIME_ERROR, "Failed to connect.");
     }
 
@@ -260,7 +259,7 @@ mrb_ssh_f_connect (mrb_state *mrb, mrb_value self)
         mrb_raise(mrb, E_RUNTIME_ERROR, "Could not init ssh session.");
     }
 
-    ssh            = malloc(sizeof(mrb_ssh_t));
+    ssh            = mrb_malloc(mrb, sizeof(mrb_ssh_t));
     ssh->sock      = sock;
     ssh->session   = session;
 
@@ -307,7 +306,7 @@ mrb_ssh_f_login (mrb_state *mrb, mrb_value self)
     mrb_get_args(mrb, "s|s!?bbs!", &user, &user_len, &pass, &pass_len, &pass_given, &prompt, &pass_is_key, &phrase, &phrase_len);
 
     if (pass_is_key && pass_given) {
-        pubkey = (char *)malloc(sizeof(char) * (pass_len + 4 + 1));
+        pubkey = (char *)mrb_malloc(mrb, sizeof(char) * (pass_len + 4 + 1));
         strcpy(pubkey, pass);
         strncat(pubkey, ".pub", 4);
     }
@@ -320,7 +319,7 @@ mrb_ssh_f_login (mrb_state *mrb, mrb_value self)
         while ((ret = libssh2_userauth_keyboard_interactive_ex(ssh->session, user, user_len, &kbd_func)) == LIBSSH2_ERROR_EAGAIN);
     }
 
-    free(pubkey);
+    mrb_free(mrb, pubkey);
 
     switch (ret) {
         case LIBSSH2_ERROR_NONE:

@@ -31,7 +31,6 @@
 #include "mruby/variable.h"
 #include "mruby/ext/ssh.h"
 
-#include <stdlib.h>
 #include <libssh2.h>
 
 static mrb_sym SYM_SESSION;
@@ -68,7 +67,7 @@ mrb_ssh_channel_free3 (mrb_state *mrb, void *p, mrb_bool wait)
         libssh2_channel_free(channel);
     }
 
-    free(data);
+    mrb_free(mrb, data);
 
     return exitcode;
 }
@@ -152,7 +151,7 @@ mrb_ssh_f_open (mrb_state *mrb, mrb_value self)
         }
     } while (!channel);
 
-    data          = malloc(sizeof(mrb_ssh_channel_t));
+    data          = mrb_malloc(mrb, sizeof(mrb_ssh_channel_t));
     data->session = mrb_ptr(session);
     data->channel = channel;
 

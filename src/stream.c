@@ -32,7 +32,6 @@
 #include "mruby/variable.h"
 #include "mruby/ext/ssh.h"
 
-#include <stdlib.h>
 #include <libssh2.h>
 
 #if MRUBY_RELEASE_NO < 10400
@@ -133,7 +132,7 @@ mrb_ssh_f_gets (mrb_state *mrb, mrb_value self)
         }
     }
 
-    mem = malloc(mem_size * sizeof(char));
+    mem = mrb_malloc(mrb, mem_size * sizeof(char));
 
   read:
 
@@ -142,7 +141,7 @@ mrb_ssh_f_gets (mrb_state *mrb, mrb_value self)
     };
 
     if (rc <= 0) {
-        free(mem);
+        mrb_free(mrb, mem);
         mrb_iv_remove(mrb, self, SYM_BUF);
         res = buf;
         goto chomp;
@@ -158,7 +157,7 @@ mrb_ssh_f_gets (mrb_state *mrb, mrb_value self)
         goto read;
 
     if (!sep) {
-        free(mem);
+        mrb_free(mrb, mem);
         mrb_iv_remove(mrb, self, SYM_BUF);
         res = buf;
         goto chomp;
@@ -167,7 +166,7 @@ mrb_ssh_f_gets (mrb_state *mrb, mrb_value self)
     if ((pos = mrb_str_index(mrb, buf, sep, sep_len, 0)) == -1)
         goto read;
 
-    free(mem);
+    mrb_free(mrb, mem);
 
   hit:
 
