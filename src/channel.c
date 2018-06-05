@@ -331,10 +331,12 @@ mrb_ssh_f_get_eof (mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_ssh_f_close (mrb_state *mrb, mrb_value self)
 {
+    int rc;
     mrb_bool wait_close = FALSE;
+
     mrb_get_args(mrb, "|b", &wait_close);
 
-    int rc = mrb_ssh_channel_free3(mrb, DATA_PTR(self), wait_close);
+    rc = mrb_ssh_channel_free3(mrb, DATA_PTR(self), wait_close);
 
     DATA_PTR(self)  = NULL;
     DATA_TYPE(self) = NULL;
