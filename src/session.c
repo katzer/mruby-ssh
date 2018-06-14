@@ -366,7 +366,7 @@ mrb_ssh_f_timeout (mrb_state *mrb, mrb_value self)
 
     mrb_get_args(mrb, "i", &timeout);
 
-    libssh2_session_set_timeout(ssh->session, timeout);
+    libssh2_session_set_timeout(ssh->session, (long)timeout);
 
     return mrb_nil_value();
 }
