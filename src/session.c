@@ -359,6 +359,19 @@ mrb_ssh_f_blocking (mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_ssh_f_timeout (mrb_state *mrb, mrb_value self)
 {
+    long timeout;
+
+    mrb_ssh_t *ssh = DATA_PTR(self);
+    mrb_ssh_raise_unless_connected(mrb, ssh);
+
+    timeout = libssh2_session_get_timeout(ssh->session);
+
+    return mrb_fixnum_value(timeout);
+}
+
+static mrb_value
+mrb_ssh_f_timeout_p (mrb_state *mrb, mrb_value self)
+{
     mrb_int timeout;
 
     mrb_ssh_t *ssh = DATA_PTR(self);
@@ -452,7 +465,8 @@ mrb_mruby_ssh_session_init (mrb_state *mrb)
     mrb_define_method(mrb, cls, "login",       mrb_ssh_f_login,   MRB_ARGS_ARG(1,4));
     mrb_define_method(mrb, cls, "logged_in?",  mrb_ssh_f_logged,  MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "blocking?",   mrb_ssh_f_blocking,MRB_ARGS_NONE());
-    mrb_define_method(mrb, cls, "timeout=",    mrb_ssh_f_timeout, MRB_ARGS_REQ(1));
+    mrb_define_method(mrb, cls, "timeout",     mrb_ssh_f_timeout, MRB_ARGS_NONE());
+    mrb_define_method(mrb, cls, "timeout=",    mrb_ssh_f_timeout_p, MRB_ARGS_REQ(1));
     mrb_define_method(mrb, cls, "last_errno",  mrb_ssh_f_last_errno, MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "last_error",  mrb_ssh_f_last_error, MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "fingerprint", mrb_ssh_f_fingerprint, MRB_ARGS_NONE());
