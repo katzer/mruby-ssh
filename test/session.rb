@@ -98,6 +98,22 @@ assert 'SSH::Session#connect+login' do
   assert_true ssh.logged_in?
 end
 
+assert 'SSH::Session#timeout=' do
+  ssh = SSH::Session.new
+
+  assert_raise(RuntimeError) { ssh.timeout = 1 }
+
+  ssh.connect 'test.rebex.net'
+
+  ssh.timeout = 1
+  ssh.login 'demo', 'password'
+  assert_equal SSH::ERROR_TIMEOUT, ssh.last_errno
+
+  ssh.timeout = 0
+  ssh.login 'demo', 'password'
+  assert_true ssh.logged_in?
+end
+
 assert 'SSH::start' do
   session = nil
 
