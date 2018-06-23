@@ -91,33 +91,33 @@ mrb_ssh_initialized()
 void
 mrb_ssh_raise_last_error (mrb_state *mrb, mrb_ssh_t *ssh)
 {
-    char *err;
-    int errno = libssh2_session_last_errno(ssh->session);
+    int err = libssh2_session_last_errno(ssh->session);
 
-    libssh2_session_last_error(ssh->session, &err, NULL, 0);
+    char *msg;
+    libssh2_session_last_error(ssh->session, &msg, NULL, 0);
 
-    mrb_ssh_raise(mrb, errno, err);
+    mrb_ssh_raise(mrb, err, msg);
 }
 
 void
-mrb_ssh_raise (mrb_state *mrb, int errno, const char* err)
+mrb_ssh_raise (mrb_state *mrb, int err, const char* msg)
 {
-    switch (errno) {
+    switch (err) {
     case LIBSSH2_ERROR_NONE:
         break;
     case LIBSSH2_ERROR_KEY_EXCHANGE_FAILURE:
-        mrb_raise(mrb, E_SSH_HOST_KEY_ERROR, err);
+        mrb_raise(mrb, E_SSH_HOST_KEY_ERROR, msg);
     case LIBSSH2_ERROR_SOCKET_TIMEOUT:
     case LIBSSH2_ERROR_TIMEOUT:
-        mrb_raise(mrb, E_SSH_TIMEOUT_ERROR, err);
+        mrb_raise(mrb, E_SSH_TIMEOUT_ERROR, msg);
     case LIBSSH2_ERROR_SOCKET_DISCONNECT:
-        mrb_raise(mrb, E_SSH_DISCONNECT_ERROR, err);
+        mrb_raise(mrb, E_SSH_DISCONNECT_ERROR, msg);
     case LIBSSH2_ERROR_AUTHENTICATION_FAILED:
-        mrb_raise(mrb, E_SSH_AUTH_ERROR, err);
+        mrb_raise(mrb, E_SSH_AUTH_ERROR, msg);
     case LIBSSH2_ERROR_CHANNEL_REQUEST_DENIED:
-        mrb_raise(mrb, E_SSH_CHANNEL_REQUEST_ERROR, err);
+        mrb_raise(mrb, E_SSH_CHANNEL_REQUEST_ERROR, msg);
     default:
-        mrb_raise(mrb, E_SSH_ERROR, err);
+        mrb_raise(mrb, E_SSH_ERROR, msg);
     }
 }
 

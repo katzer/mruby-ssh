@@ -49,7 +49,7 @@ typedef struct mrb_ssh mrb_ssh_t;
 unsigned int mrb_ssh_initialized();
 int mrb_ssh_wait_socket (mrb_ssh_t *ssh);
 void mrb_ssh_raise_last_error (mrb_state *mrb, mrb_ssh_t *ssh);
-void mrb_ssh_raise (mrb_state *mrb, int errno, const char* err);
+void mrb_ssh_raise (mrb_state *mrb, int err, const char* msg);
 
 #ifdef __cplusplus
 }
