@@ -91,24 +91,53 @@ mrb_ssh_initialized()
 void
 mrb_ssh_raise_last_error (mrb_state *mrb, mrb_ssh_t *ssh)
 {
-    char *msg;
+    char *err;
+    int errno = libssh2_session_last_errno(ssh->session);
 
-    libssh2_session_last_error(ssh->session, &msg, NULL, 0);
-    mrb_raise(mrb, E_RUNTIME_ERROR, msg);
+    libssh2_session_last_error(ssh->session, &err, NULL, 0);
+
+    mrb_ssh_raise(mrb, errno, err);
+}
+
+void
+mrb_ssh_raise (mrb_state *mrb, int errno, const char* err)
+{
+    switch (errno) {
+    case LIBSSH2_ERROR_NONE:
+        break;
+    case LIBSSH2_ERROR_KEY_EXCHANGE_FAILURE:
+        mrb_raise(mrb, E_SSH_HOST_KEY_ERROR, err);
+    case LIBSSH2_ERROR_SOCKET_TIMEOUT:
+    case LIBSSH2_ERROR_TIMEOUT:
+        mrb_raise(mrb, E_SSH_TIMEOUT_ERROR, err);
+    case LIBSSH2_ERROR_SOCKET_DISCONNECT:
+        mrb_raise(mrb, E_SSH_DISCONNECT_ERROR, err);
+    case LIBSSH2_ERROR_AUTHENTICATION_FAILED:
+        mrb_raise(mrb, E_SSH_AUTH_ERROR, err);
+    case LIBSSH2_ERROR_CHANNEL_REQUEST_DENIED:
+        mrb_raise(mrb, E_SSH_CHANNEL_REQUEST_ERROR, err);
+    default:
+        mrb_raise(mrb, E_SSH_ERROR, err);
+    }
 }
 
 void
 mrb_mruby_ssh_gem_init (mrb_state *mrb)
 {
-    struct RClass *ssh = mrb_define_module(mrb, "SSH");
+    struct RClass *exp, *ssh = mrb_define_module(mrb, "SSH");
 
     mrb_define_class_method(mrb, ssh, "startup",  mrb_ssh_f_startup,  MRB_ARGS_NONE());
     mrb_define_class_method(mrb, ssh, "shutdown", mrb_ssh_f_shutdown, MRB_ARGS_NONE());
     mrb_define_class_method(mrb, ssh, "ready?",   mrb_ssh_f_ready,    MRB_ARGS_NONE());
 
-    mrb_define_const(mrb, ssh, "ERROR_TIMEOUT",        mrb_fixnum_value(LIBSSH2_ERROR_TIMEOUT));
-    mrb_define_const(mrb, ssh, "ERROR_DISCONNECT",     mrb_fixnum_value(LIBSSH2_ERROR_SOCKET_DISCONNECT));
-    mrb_define_const(mrb, ssh, "ERROR_AUTHENTICATION", mrb_fixnum_value(LIBSSH2_ERROR_AUTHENTICATION_FAILED));
+    exp = mrb_define_class_under(mrb, ssh, "Exception", mrb->eException_class);
+
+    mrb_define_class_under(mrb, ssh, "AuthenticationFailed", exp);
+    mrb_define_class_under(mrb, ssh, "ChannelRequestFailed", exp);
+    mrb_define_class_under(mrb, ssh, "ConnectError",         exp);
+    mrb_define_class_under(mrb, ssh, "Disconnected",         exp);
+    mrb_define_class_under(mrb, ssh, "HostKeyMismatch",      exp);
+    mrb_define_class_under(mrb, ssh, "Timeout",              exp);
 
     mrb_mruby_ssh_session_init(mrb);
     mrb_mruby_ssh_channel_init(mrb);

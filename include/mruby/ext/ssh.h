@@ -38,9 +38,18 @@ struct mrb_ssh
 
 typedef struct mrb_ssh mrb_ssh_t;
 
+#define E_SSH_ERROR                    (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "Exception"))
+#define E_SSH_AUTH_ERROR               (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "AuthenticationFailed"))
+#define E_SSH_CHANNEL_REQUEST_ERROR    (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "ChannelRequestFailed"))
+#define E_SSH_CONNECT_ERROR            (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "ConnectError"))
+#define E_SSH_DISCONNECT_ERROR         (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "Disconnected"))
+#define E_SSH_HOST_KEY_ERROR           (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "HostKeyMismatch"))
+#define E_SSH_TIMEOUT_ERROR            (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "Timeout"))
+
 unsigned int mrb_ssh_initialized();
 int mrb_ssh_wait_socket (mrb_ssh_t *ssh);
 void mrb_ssh_raise_last_error (mrb_state *mrb, mrb_ssh_t *ssh);
+void mrb_ssh_raise (mrb_state *mrb, int errno, const char* err);
 
 #ifdef __cplusplus
 }

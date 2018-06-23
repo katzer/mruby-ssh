@@ -64,7 +64,7 @@ mrb_ssh_f_init (mrb_state *mrb, mrb_value self)
     mrb_get_args(mrb, "o|i", &channel, &stream);
 
     if (DATA_PTR(channel) == NULL) {
-        mrb_raise(mrb, E_RUNTIME_ERROR, "Channel not opened.");
+        mrb_raise(mrb, E_SSH_ERROR, "Channel not opened.");
     }
 
     mrb_iv_set(mrb, self, SYM_ID, mrb_fixnum_value(stream));

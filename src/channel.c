@@ -84,7 +84,7 @@ static void
 mrb_ssh_raise_unless_opened (mrb_state *mrb, mrb_ssh_channel_t *channel)
 {
     if (channel && channel->session->data && mrb_ssh_initialized()) return;
-    mrb_raise(mrb, E_RUNTIME_ERROR, "SSH channel not opened.");
+    mrb_raise(mrb, E_SSH_ERROR, "SSH channel not opened.");
 }
 
 mrb_ssh_t *
@@ -117,7 +117,7 @@ mrb_ssh_f_open (mrb_state *mrb, mrb_value self)
     mrb_value session, type;
 
     if (DATA_PTR(self)) {
-        mrb_raise(mrb, E_RUNTIME_ERROR, "SSH Channel already open.");
+        mrb_raise(mrb, E_SSH_ERROR, "SSH Channel already open.");
     }
 
     mrb_get_args(mrb, "|s!", &msg, &msg_len);
@@ -126,11 +126,11 @@ mrb_ssh_f_open (mrb_state *mrb, mrb_value self)
     ssh     = DATA_PTR(session);
 
     if (!(ssh && mrb_ssh_initialized())) {
-        mrb_raise(mrb, E_RUNTIME_ERROR, "SSH session not connected.");
+        mrb_raise(mrb, E_SSH_ERROR, "SSH session not connected.");
     }
 
     if (!libssh2_userauth_authenticated(ssh->session)) {
-        mrb_raise(mrb, E_RUNTIME_ERROR, "SSH session not authenticated.");
+        mrb_raise(mrb, E_SSH_ERROR, "SSH session not authenticated.");
     }
 
     win_size = mrb_fixnum(mrb_attr_get(mrb, self, SYM_WIN_SIZE));
@@ -147,7 +147,7 @@ mrb_ssh_f_open (mrb_state *mrb, mrb_value self)
         if (libssh2_session_last_errno(ssh->session) == LIBSSH2_ERROR_EAGAIN) {
             mrb_ssh_wait_socket(ssh);
         } else {
-            mrb_raise(mrb, E_RUNTIME_ERROR, "Unable to open the SSH channel.");
+            mrb_ssh_raise_last_error(mrb, ssh);
         }
     } while (!channel);
 
@@ -181,13 +181,8 @@ mrb_ssh_f_request (mrb_state *mrb, mrb_value self)
         mrb_ssh_wait_socket(ssh);
     }
 
-    switch (rc) {
-        case LIBSSH2_ERROR_CHANNEL_REQUEST_DENIED:
-            return mrb_false_value();
-        case 0:
-            return mrb_true_value();
-        default:
-            mrb_ssh_raise_last_error(mrb, ssh);
+    if (rc != 0) {
+        mrb_ssh_raise_last_error(mrb, ssh);
     }
 
     return mrb_nil_value();
@@ -240,13 +235,8 @@ mrb_ssh_f_pty (mrb_state *mrb, mrb_value self)
         mrb_ssh_wait_socket(ssh);
     }
 
-    switch (rc) {
-        case LIBSSH2_ERROR_CHANNEL_REQUEST_DENIED:
-            return mrb_false_value();
-        case 0:
-            return mrb_true_value();
-        default:
-            mrb_ssh_raise_last_error(mrb, ssh);
+    if (rc != 0) {
+        mrb_ssh_raise_last_error(mrb, ssh);
     }
 
     return mrb_nil_value();
@@ -267,13 +257,8 @@ mrb_ssh_f_env (mrb_state *mrb, mrb_value self)
         mrb_ssh_wait_socket(ssh);
     }
 
-    switch (rc) {
-        case LIBSSH2_ERROR_CHANNEL_REQUEST_DENIED:
-            return mrb_false_value();
-        case 0:
-            return mrb_true_value();
-        default:
-            mrb_ssh_raise_last_error(mrb, ssh);
+    if (rc != 0) {
+        mrb_ssh_raise_last_error(mrb, ssh);
     }
 
     return mrb_nil_value();

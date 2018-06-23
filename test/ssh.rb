@@ -38,14 +38,30 @@ assert 'SSH.start' do
   assert_include SSH.public_methods, :start
 end
 
-assert 'SSH::ERROR_TIMEOUT' do
-  assert_include SSH.constants, :ERROR_TIMEOUT
+assert 'SSH::Exception' do
+  assert_kind_of Class, SSH::Exception
 end
 
-assert 'SSH::ERROR_DISCONNECT_ERROR' do
-  assert_include SSH.constants, :ERROR_DISCONNECT
+assert 'SSH::AuthenticationFailed' do
+  assert_kind_of Class, SSH::AuthenticationFailed
 end
 
-assert 'SSH::ERROR_AUTHENTICATION_ERROR' do
-  assert_include SSH.constants, :ERROR_AUTHENTICATION
+assert 'SSH::ChannelRequestFailed' do
+  assert_kind_of Class, SSH::ChannelRequestFailed
+end
+
+assert 'SSH::ConnectError' do
+  assert_kind_of Class, SSH::ConnectError
+end
+
+assert 'SSH::Disconnected' do
+  assert_kind_of Class, SSH::Disconnected
+end
+
+assert 'SSH::HostKeyMismatch' do
+  assert_kind_of Class, SSH::HostKeyMismatch
+end
+
+assert 'SSH::Timeout' do
+  assert_kind_of Class, SSH::Timeout
 end

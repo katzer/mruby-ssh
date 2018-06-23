@@ -201,7 +201,7 @@ static void
 mrb_ssh_raise_unless_connected (mrb_state *mrb, mrb_ssh_t *ssh)
 {
     if (ssh && ssh->session) return;
-    mrb_raise(mrb, E_RUNTIME_ERROR, "SSH session not connected.");
+    mrb_raise(mrb, E_SSH_ERROR, "SSH session not connected.");
 }
 
 static void
@@ -234,11 +234,11 @@ mrb_ssh_f_connect (mrb_state *mrb, mrb_value self)
 
     mrb_ssh_t *ssh;
     LIBSSH2_SESSION *session;
-    int sock, blocking = 1, port = 22, compress = 0, sigpipe = 0;
+    int sock, blocking = 1, port = 22, compress = 0, sigpipe = 0, ret;
     long timeout = 15000;
 
     if (DATA_PTR(self)) {
-        mrb_raise(mrb, E_RUNTIME_ERROR, "SSH session already connected.");
+        mrb_raise(mrb, E_SSH_ERROR, "SSH session already connected.");
     }
 
     mrb_get_args(mrb, "s|H!", &host, &host_len, &opts);
@@ -252,11 +252,11 @@ mrb_ssh_f_connect (mrb_state *mrb, mrb_value self)
     }
 
     if (mrb_ssh_init_socket(mrb, AF_INET, host, port, &sock) != 0) {
-        mrb_raise(mrb, E_RUNTIME_ERROR, "Failed to connect.");
+        mrb_raise(mrb, E_SSH_CONNECT_ERROR, "Failed to connect.");
     }
 
-    if (mrb_ssh_init_session(sock, &session, blocking, timeout, compress, sigpipe) != 0) {
-        mrb_raise(mrb, E_RUNTIME_ERROR, "Could not init ssh session.");
+    if ((ret = mrb_ssh_init_session(sock, &session, blocking, timeout, compress, sigpipe)) != 0) {
+        mrb_ssh_raise(mrb, ret, "Could not init ssh session.");
     }
 
     ssh            = mrb_malloc(mrb, sizeof(mrb_ssh_t));
@@ -297,7 +297,7 @@ mrb_ssh_f_login (mrb_state *mrb, mrb_value self)
     mrb_bool pass_given, pass_is_key = FALSE, prompt = TRUE;
     mrb_int user_len = 0, pass_len = 0, phrase_len = 0;
     const char *user, *pass, *phrase = NULL;
-    char *pubkey = NULL, *err;
+    char *pubkey = NULL;
     int ret;
 
     mrb_ssh_t *ssh = DATA_PTR(self);
@@ -326,9 +326,8 @@ mrb_ssh_f_login (mrb_state *mrb, mrb_value self)
             break;
         case LIBSSH2_ERROR_SOCKET_DISCONNECT:
             mrb_ssh_f_close(mrb, self);
-        case LIBSSH2_ERROR_AUTHENTICATION_FAILED:
-            libssh2_session_last_error(ssh->session, &err, NULL, 0);
-            mrb_raise(mrb, E_RUNTIME_ERROR, err);
+        default:
+            mrb_ssh_raise_last_error(mrb, ssh);
     }
 
     return mrb_nil_value();

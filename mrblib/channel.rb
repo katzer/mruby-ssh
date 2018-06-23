@@ -116,7 +116,10 @@ module SSH
     #
     # @return [ String ] nil if the subsystem could not be requested.
     def exec(cmd, opts = {})
-      Stream.new(self).gets(opts) if request('exec', cmd, EXT_IGNORE)
+      request('exec', cmd, EXT_IGNORE)
+      Stream.new(self).gets(opts)
+    rescue SSH::ChannelRequestFailed
+      nil
     ensure
       close(true)
     end
@@ -191,7 +194,14 @@ module SSH
     #
     # @return [ Boolean ] true if the subsystem could be requested.
     def subsystem(subsystem, ext = EXT_NORMAL, &block)
-      ok = request('subsystem', subsystem, ext)
+      ok = true
+
+      begin
+        request('subsystem', subsystem, ext)
+      rescue SSH::ChannelRequestFailed
+        ok = false
+      end
+
       block ? yield(ok) && nil : ok
     ensure
       close if block
@@ -207,12 +217,17 @@ module SSH
     #
     # @return [ Array<SSH::Stream> ] nil if &block is given.
     def __popen__(cmd, ext, &block)
-      suc = request('exec', cmd, ext)
-      res = []
+      ok = true
 
-      res << Stream.new(self, Stream::STDIO)
+      begin
+        request('exec', cmd, ext)
+      rescue SSH::ChannelRequestFailed
+        ok = false
+      end
+
+      res = [Stream.new(self, Stream::STDIO)]
       res << Stream.new(self, Stream::STDERR) if ext == EXT_NORMAL
-      res << suc
+      res << ok
 
       block ? yield(*res) && nil : res
     ensure
@@ -227,12 +242,13 @@ module SSH
     #
     # @return [ String ] nil if the subsystem could not be requested.
     def __capture__(cmd, opts, ext)
-      suc = request('exec', cmd, ext)
-      res = []
+      request('exec', cmd, ext)
 
-      res << Stream.new(self, 0).gets(opts) if suc
-      res << Stream.new(self, 1).gets(opts) if suc && ext == EXT_NORMAL
-      res << suc
+      res = [Stream.new(self, 0).gets(opts)]
+      res << Stream.new(self, 1).gets(opts) if ext == EXT_NORMAL
+      res << true
+    rescue SSH::ChannelRequestFailed
+      [false]
     ensure
       close(true)
     end

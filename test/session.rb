@@ -70,9 +70,9 @@ end
 assert 'SSH::Session#connect+login' do
   ssh = SSH::Session.new
 
-  assert_raise(RuntimeError) { ssh.fingerprint }
-  assert_raise(RuntimeError) { ssh.userauth_methods 'demo' }
-  assert_raise(RuntimeError) { ssh.userauth_method_supported? 'demo', 'xyz' }
+  assert_raise(SSH::Exception) { ssh.fingerprint }
+  assert_raise(SSH::Exception) { ssh.userauth_methods 'demo' }
+  assert_raise(SSH::Exception) { ssh.userauth_method_supported? 'demo', 'xyz' }
 
   ssh.connect 'test.rebex.net'
   assert_true  ssh.connected?
@@ -88,7 +88,7 @@ assert 'SSH::Session#connect+login' do
   assert_true ssh.userauth_method_supported? 'demo', auth_methods[0]
   assert_false ssh.userauth_method_supported? 'demo', 'xyz'
 
-  ssh.login('demo', 'false') rescue nil
+  assert_raise(SSH::AuthenticationFailed) { ssh.login('demo', 'false') }
   assert_kind_of String,  ssh.last_error
   assert_kind_of Integer, ssh.last_errno
   assert_not_equal 0,     ssh.last_errno
@@ -101,14 +101,14 @@ end
 assert 'SSH::Session#timeout' do
   ssh = SSH::Session.new
 
-  assert_raise(RuntimeError) { ssh.timeout = 1 }
+  assert_raise(SSH::Exception) { ssh.timeout = 1 }
+  assert_raise(SSH::Timeout) { ssh.connect 'test.rebex.net', timeout: 1 }
 
   ssh.connect 'test.rebex.net'
 
   ssh.timeout = 1
   assert_equal 1, ssh.timeout
-  ssh.login 'demo', 'password'
-  assert_equal SSH::ERROR_TIMEOUT, ssh.last_errno
+  assert_raise(SSH::Timeout) { ssh.login 'demo', 'password' }
 
   ssh.timeout = 0
   assert_equal 0, ssh.timeout
