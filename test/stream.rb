@@ -88,6 +88,8 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
 
     assert_equal 'hello', io.readline(chomp: true)
     assert_equal 'world', io.readline(chomp: true)
+
+    assert_raise(EOFError) { io.readline }
   end
 
   assert 'SSH::Stream#getc' do

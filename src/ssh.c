@@ -124,20 +124,11 @@ mrb_ssh_raise (mrb_state *mrb, int err, const char* msg)
 void
 mrb_mruby_ssh_gem_init (mrb_state *mrb)
 {
-    struct RClass *exp, *ssh = mrb_define_module(mrb, "SSH");
+    struct RClass *ssh = mrb_define_module(mrb, "SSH");
 
     mrb_define_class_method(mrb, ssh, "startup",  mrb_ssh_f_startup,  MRB_ARGS_NONE());
     mrb_define_class_method(mrb, ssh, "shutdown", mrb_ssh_f_shutdown, MRB_ARGS_NONE());
     mrb_define_class_method(mrb, ssh, "ready?",   mrb_ssh_f_ready,    MRB_ARGS_NONE());
-
-    exp = mrb_define_class_under(mrb, ssh, "Exception", mrb->eException_class);
-
-    mrb_define_class_under(mrb, ssh, "AuthenticationFailed", exp);
-    mrb_define_class_under(mrb, ssh, "ChannelRequestFailed", exp);
-    mrb_define_class_under(mrb, ssh, "ConnectError",         exp);
-    mrb_define_class_under(mrb, ssh, "Disconnected",         exp);
-    mrb_define_class_under(mrb, ssh, "HostKeyMismatch",      exp);
-    mrb_define_class_under(mrb, ssh, "Timeout",              exp);
 
     mrb_mruby_ssh_session_init(mrb);
     mrb_mruby_ssh_channel_init(mrb);

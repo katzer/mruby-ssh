@@ -20,52 +20,34 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-assert 'SSH' do
-  assert_kind_of Module, SSH
+module SSH
+  # A general exception class, to act as the ancestor of all other SSH
+  # exception classes.
+  class Exception < ::RuntimeError; end
+
+  # This exception is raised when authentication fails (whether it be
+  # public key authentication, password authentication, or whatever).
+  class AuthenticationFailed < SSH::Exception; end
+
+  # This exception is raised when a connection attempt times out.
+  class ConnectError < SSH::Exception; end
+
+  # This exception is raised when the remote host has disconnected
+  # unexpectedly.
+  class Disconnect < SSH::Exception; end
+
+  # This exception is raised when the remote host has disconnected/
+  # timeouted unexpectedly.
+  class Timeout < Disconnect; end
+
+  # This exception is primarily used internally.
+  class ChannelRequestFailed < SSH::Exception; end
+
+  # Base class for host key exceptions.
+  class HostKeyError < SSH::Exception; end
 end
 
-assert 'SSH.startup' do
-  assert_nothing_raised { SSH.startup }
-  assert_true SSH.ready?
-end
-
-assert 'SSH.shutdown' do
-  assert_nothing_raised { SSH.shutdown }
-  assert_false SSH.ready?
-end
-
-assert 'SSH.start' do
-  assert_include SSH.public_methods, :start
-end
-
-assert 'SSH::Exception' do
-  assert_kind_of Class, SSH::Exception
-end
-
-assert 'SSH::AuthenticationFailed' do
-  assert_kind_of Class, SSH::AuthenticationFailed
-end
-
-assert 'SSH::ChannelRequestFailed' do
-  assert_kind_of Class, SSH::ChannelRequestFailed
-end
-
-assert 'SSH::ConnectError' do
-  assert_kind_of Class, SSH::ConnectError
-end
-
-assert 'SSH::Disconnect' do
-  assert_kind_of Class, SSH::Disconnect
-end
-
-assert 'SSH::HostKeyError' do
-  assert_kind_of Class, SSH::HostKeyError
-end
-
-assert 'SSH::Timeout' do
-  assert_kind_of Class, SSH::Timeout
-end
-
-assert 'EOFError' do
-  assert_kind_of Class, EOFError
+unless Object.const_defined? :EOFError
+  class IOError < StandardError; end
+  class EOFError < IOError; end
 end
