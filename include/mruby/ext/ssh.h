@@ -38,13 +38,16 @@ struct mrb_ssh
 
 typedef struct mrb_ssh mrb_ssh_t;
 
-#define E_SSH_ERROR                    (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "Exception"))
-#define E_SSH_AUTH_ERROR               (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "AuthenticationFailed"))
-#define E_SSH_CHANNEL_REQUEST_ERROR    (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "ChannelRequestFailed"))
-#define E_SSH_CONNECT_ERROR            (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "ConnectError"))
-#define E_SSH_DISCONNECT_ERROR         (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "Disconnect"))
-#define E_SSH_HOST_KEY_ERROR           (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "HostKeyError"))
-#define E_SSH_TIMEOUT_ERROR            (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "Timeout"))
+#define E_SSH_ERROR                  (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "Exception"))
+#define E_SSH_AUTH_ERROR             (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "AuthenticationFailed"))
+#define E_SSH_CHANNEL_REQUEST_ERROR  (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "ChannelRequestFailed"))
+#define E_SSH_CHANNEL_CLOSED_ERROR   (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "ChannelNotOpened"))
+#define E_SSH_CONNECT_ERROR          (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "ConnectError"))
+#define E_SSH_NOT_CONNECTED_ERROR    (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "NotConnected"))
+#define E_SSH_NOT_AUTH_ERROR         (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "NotAuthentificated"))
+#define E_SSH_DISCONNECT_ERROR       (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "ConnectionLost"))
+#define E_SSH_HOST_KEY_ERROR         (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "HostKeyError"))
+#define E_SSH_TIMEOUT_ERROR          (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "Timeout"))
 
 unsigned int mrb_ssh_initialized();
 int mrb_ssh_wait_socket (mrb_ssh_t *ssh);

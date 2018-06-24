@@ -41,31 +41,3 @@ end
 assert 'SSH::Exception' do
   assert_kind_of Class, SSH::Exception
 end
-
-assert 'SSH::AuthenticationFailed' do
-  assert_kind_of Class, SSH::AuthenticationFailed
-end
-
-assert 'SSH::ChannelRequestFailed' do
-  assert_kind_of Class, SSH::ChannelRequestFailed
-end
-
-assert 'SSH::ConnectError' do
-  assert_kind_of Class, SSH::ConnectError
-end
-
-assert 'SSH::Disconnect' do
-  assert_kind_of Class, SSH::Disconnect
-end
-
-assert 'SSH::HostKeyError' do
-  assert_kind_of Class, SSH::HostKeyError
-end
-
-assert 'SSH::Timeout' do
-  assert_kind_of Class, SSH::Timeout
-end
-
-assert 'EOFError' do
-  assert_kind_of Class, EOFError
-end

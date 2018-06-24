@@ -110,7 +110,7 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
   assert 'SSH::Channel#open' do
     channel = SSH::Channel.new(ssh)
 
-    assert_raise(SSH::Exception) { SSH::Channel.new(dummy).open }
+    assert_raise(SSH::NotConnected) { SSH::Channel.new(dummy).open }
 
     assert_nothing_raised { channel.open }
     assert_true channel.open?
@@ -122,7 +122,7 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
   assert 'SSH::Channel#reopen' do
     channel = SSH::Channel.new(ssh)
 
-    assert_raise(SSH::Exception) { SSH::Channel.new(dummy).reopen }
+    assert_raise(SSH::NotConnected) { SSH::Channel.new(dummy).reopen }
 
     channel.reopen
     assert_true channel.open?
@@ -134,7 +134,7 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
 
   assert 'SSH::Channel#request' do
     channel = SSH::Channel.new(ssh)
-    assert_raise(SSH::Exception) { channel.request('shell') }
+    assert_raise(SSH::ChannelNotOpened) { channel.request('shell') }
 
     channel.reopen
     assert_nothing_raised { channel.request('shell') }
@@ -144,7 +144,7 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
 
   assert 'SSH::Channel#subsystem' do
     channel = SSH::Channel.new(ssh)
-    assert_raise(SSH::Exception) { channel.subsystem('sftp') }
+    assert_raise(SSH::ChannelNotOpened) { channel.subsystem('sftp') }
 
     channel.reopen
     assert_nothing_raised { channel.subsystem('sftp') }
@@ -154,7 +154,7 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
 
   assert 'SSH::Channel#exec' do
     channel = SSH::Channel.new(ssh)
-    assert_raise(SSH::Exception) { channel.exec('echo ETNA') }
+    assert_raise(SSH::ChannelNotOpened) { channel.exec('echo ETNA') }
 
     channel.reopen
     assert_equal "ETNA\n", channel.exec('echo ETNA')
@@ -180,7 +180,7 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     channel.close
 
     channel = SSH::Channel.new(ssh)
-    assert_raise(SSH::Exception) { channel.capture2('echo ETNA') }
+    assert_raise(SSH::ChannelNotOpened) { channel.capture2('echo ETNA') }
   end
 
   assert 'SSH::Channel#capture2e' do
@@ -198,7 +198,7 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     channel.close
 
     channel = SSH::Channel.new(ssh)
-    assert_raise(SSH::Exception) { channel.capture2e('echo ETNA') }
+    assert_raise(SSH::ChannelNotOpened) { channel.capture2e('echo ETNA') }
   end
 
   assert 'SSH::Channel#capture3' do
@@ -218,7 +218,7 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     channel.close
 
     channel = SSH::Channel.new(ssh)
-    assert_raise(SSH::Exception) { channel.capture3('echo ETNA') }
+    assert_raise(SSH::ChannelNotOpened) { channel.capture3('echo ETNA') }
   end
 
   assert 'SSH::Channel#popen2' do
@@ -232,7 +232,7 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     io.close
 
     channel = SSH::Channel.new(ssh)
-    assert_raise(SSH::Exception) { channel.popen2('echo ETNA') }
+    assert_raise(SSH::ChannelNotOpened) { channel.popen2('echo ETNA') }
   end
 
   assert 'SSH::Channel#popen2e' do
@@ -252,7 +252,7 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     channel.close
 
     channel = SSH::Channel.new(ssh)
-    assert_raise(SSH::Exception) { channel.popen2e('hostname') }
+    assert_raise(SSH::ChannelNotOpened) { channel.popen2e('hostname') }
   end
 
   assert 'SSH::Channel#popen3' do
@@ -275,7 +275,7 @@ SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
     channel.close
 
     channel = SSH::Channel.new(ssh)
-    assert_raise(SSH::Exception) { channel.popen3('hostname') }
+    assert_raise(SSH::ChannelNotOpened) { channel.popen3('hostname') }
   end
 
   assert 'SSH::Channel#env' do

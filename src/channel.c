@@ -84,7 +84,7 @@ static void
 mrb_ssh_raise_unless_opened (mrb_state *mrb, mrb_ssh_channel_t *channel)
 {
     if (channel && channel->session->data && mrb_ssh_initialized()) return;
-    mrb_raise(mrb, E_SSH_ERROR, "SSH channel not opened.");
+    mrb_raise(mrb, E_SSH_CHANNEL_CLOSED_ERROR, "SSH channel not opened.");
 }
 
 mrb_ssh_t *
@@ -126,11 +126,11 @@ mrb_ssh_f_open (mrb_state *mrb, mrb_value self)
     ssh     = DATA_PTR(session);
 
     if (!(ssh && mrb_ssh_initialized())) {
-        mrb_raise(mrb, E_SSH_ERROR, "SSH session not connected.");
+        mrb_raise(mrb, E_SSH_NOT_CONNECTED_ERROR, "SSH session not connected.");
     }
 
     if (!libssh2_userauth_authenticated(ssh->session)) {
-        mrb_raise(mrb, E_SSH_ERROR, "SSH session not authenticated.");
+        mrb_raise(mrb, E_SSH_NOT_AUTH_ERROR, "SSH session not authenticated.");
     }
 
     win_size = mrb_fixnum(mrb_attr_get(mrb, self, SYM_WIN_SIZE));

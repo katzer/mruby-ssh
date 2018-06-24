@@ -70,9 +70,9 @@ end
 assert 'SSH::Session#connect+login' do
   ssh = SSH::Session.new
 
-  assert_raise(SSH::Exception) { ssh.fingerprint }
-  assert_raise(SSH::Exception) { ssh.userauth_methods 'demo' }
-  assert_raise(SSH::Exception) { ssh.userauth_method_supported? 'demo', 'xyz' }
+  assert_raise(SSH::NotConnected) { ssh.fingerprint }
+  assert_raise(SSH::NotConnected) { ssh.userauth_methods 'demo' }
+  assert_raise(SSH::NotConnected) { ssh.userauth_method_supported? 'demo', 'x' }
 
   ssh.connect 'test.rebex.net'
   assert_true  ssh.connected?
@@ -101,7 +101,7 @@ end
 assert 'SSH::Session#timeout' do
   ssh = SSH::Session.new
 
-  assert_raise(SSH::Exception) { ssh.timeout = 1 }
+  assert_raise(SSH::NotConnected) { ssh.timeout = 1 }
   assert_raise(SSH::Timeout) { ssh.connect 'test.rebex.net', timeout: 1 }
 
   ssh.connect 'test.rebex.net'

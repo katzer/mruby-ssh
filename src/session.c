@@ -201,7 +201,7 @@ static void
 mrb_ssh_raise_unless_connected (mrb_state *mrb, mrb_ssh_t *ssh)
 {
     if (ssh && ssh->session) return;
-    mrb_raise(mrb, E_SSH_ERROR, "SSH session not connected.");
+    mrb_raise(mrb, E_SSH_NOT_CONNECTED_ERROR, "SSH session not connected.");
 }
 
 static void

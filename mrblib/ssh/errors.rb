@@ -49,16 +49,25 @@ module SSH
   # This exception is raised when a connection attempt times out.
   class ConnectError < SSH::Exception; end
 
+  # There is no SFTP connection to the server.
+  class NotConnected < SSH::Exception; end
+
+  # Missing authentication.
+  class NotAuthentificated < SSH::Exception; end
+
   # This exception is raised when the remote host has disconnected
   # unexpectedly.
-  class Disconnect < SSH::Exception; end
+  class ConnectionLost < SSH::Exception; end
 
-  # This exception is raised when the remote host has disconnected/
-  # timeouted unexpectedly.
-  class Timeout < Disconnect; end
+  # This exception is raised when the remote host has timeouted
+  # unexpectedly.
+  class Timeout < SSH::Exception; end
 
   # This exception is primarily used internally.
   class ChannelRequestFailed < SSH::Exception; end
+
+  # This exception is raised when the channel is not opened.
+  class ChannelNotOpened < SSH::Exception; end
 
   # Base class for host key exceptions.
   class HostKeyError < SSH::Exception; end
