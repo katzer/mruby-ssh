@@ -110,6 +110,13 @@ assert 'SSH::Session#timeout' do
   assert_equal 1, ssh.timeout
   assert_raise(SSH::Timeout) { ssh.login 'demo', 'password' }
 
+  begin
+    ssh.login 'demo', 'password'
+  rescue SSH::Timeout => e
+    assert_equal ssh.last_error, e.message
+    assert_equal ssh.last_errno, e.errno
+  end
+
   ssh.timeout = 0
   assert_equal 0, ssh.timeout
   ssh.login 'demo', 'password'

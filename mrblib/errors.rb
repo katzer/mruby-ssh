@@ -23,7 +23,24 @@
 module SSH
   # A general exception class, to act as the ancestor of all other SSH
   # exception classes.
-  class Exception < ::RuntimeError; end
+  class Exception < ::RuntimeError
+    # Construct a new Exception object, optionally passing in a message
+    # and a SSH specific error code.
+    #
+    # @param [ String ] msg  Optional error message.
+    # @param [ Int ]    code Optional SSH error code.
+    #
+    # @return [ Void ]
+    def initialize(msg = nil, errno = 0)
+      super(msg)
+      @errno = errno
+    end
+
+    # The SSH error code.
+    #
+    # @return [ Int ]
+    attr_reader :errno
+  end
 
   # This exception is raised when authentication fails (whether it be
   # public key authentication, password authentication, or whatever).

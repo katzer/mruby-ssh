@@ -31,6 +31,8 @@
 #include "stream.h"
 
 #include "mruby.h"
+#include "mruby/error.h"
+#include "mruby/variable.h"
 #include "mruby/ext/ssh.h"
 
 #include <libssh2.h>
@@ -102,23 +104,31 @@ mrb_ssh_raise_last_error (mrb_state *mrb, mrb_ssh_t *ssh)
 void
 mrb_ssh_raise (mrb_state *mrb, int err, const char* msg)
 {
+    struct RClass *c;
+    mrb_value exc;
+
     switch (err) {
     case LIBSSH2_ERROR_NONE:
-        break;
+        return;
     case LIBSSH2_ERROR_KEY_EXCHANGE_FAILURE:
-        mrb_raise(mrb, E_SSH_HOST_KEY_ERROR, msg);
+        c = E_SSH_HOST_KEY_ERROR; break;
     case LIBSSH2_ERROR_SOCKET_TIMEOUT:
     case LIBSSH2_ERROR_TIMEOUT:
-        mrb_raise(mrb, E_SSH_TIMEOUT_ERROR, msg);
+        c = E_SSH_TIMEOUT_ERROR; break;
     case LIBSSH2_ERROR_SOCKET_DISCONNECT:
-        mrb_raise(mrb, E_SSH_DISCONNECT_ERROR, msg);
+        c = E_SSH_DISCONNECT_ERROR; break;
     case LIBSSH2_ERROR_AUTHENTICATION_FAILED:
-        mrb_raise(mrb, E_SSH_AUTH_ERROR, msg);
+        c = E_SSH_AUTH_ERROR; break;
     case LIBSSH2_ERROR_CHANNEL_REQUEST_DENIED:
-        mrb_raise(mrb, E_SSH_CHANNEL_REQUEST_ERROR, msg);
+        c = E_SSH_CHANNEL_REQUEST_ERROR; break;
     default:
-        mrb_raise(mrb, E_SSH_ERROR, msg);
+        c = E_SSH_ERROR; break;
     }
+
+    exc = mrb_exc_new_str(mrb, c, mrb_str_new_cstr(mrb, msg));
+    mrb_iv_set(mrb, exc, mrb_intern_static(mrb, "@errno", 6), mrb_fixnum_value(err));
+
+    mrb_exc_raise(mrb, exc);
 }
 
 void
