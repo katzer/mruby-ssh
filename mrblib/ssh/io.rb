@@ -22,15 +22,6 @@
 
 module SSH
   module IO
-    # To be enumerable
-    include Enumerable
-
-    # # Write to io.
-    # def write(*); raise NotImplementedError end
-
-    # # Read from io.
-    # def gets(*); raise NotImplementedError end
-
     # Calls the block once for each line in the named file on the remote server.
     # Yields the line to the block.
     #
@@ -40,12 +31,11 @@ module SSH
     # @return [ Void ]
     def each_line(opts = { chomp: false })
       return to_enum(:each, opts) unless block_given?
-      loop { break unless (line = gets(opts)) && yield(line) }
+      open || loop { break unless (line = gets(opts)) && yield(line) }
     ensure
       close
     end
 
-    # To be enumerable
     alias each each_line
 
     # Reads a one-character string. Returns nil if called at end of file.

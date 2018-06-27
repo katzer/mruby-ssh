@@ -42,6 +42,11 @@ module SSH
       channel.eof?
     end
 
+    # Dummy required by SSH::IO: We could open/reopen the channel here.
+    #
+    # @return [ Void ]
+    def open; end
+
     # Tell the remote host that no further data will be sent.
     # Processes typically interpret this as a closed stdin descriptor.
     #
