@@ -21,6 +21,14 @@
 # SOFTWARE.
 
 module SSH
+  # A session class representing the connection service running on top of the
+  # SSH transport layer. It manages the creation of channels (see open_channel),
+  # and the dispatching of messages to the various channels.
+  #
+  # You will rarely (if ever) need to instantiate this class directly; rather,
+  # you'll almost always use Net::SSH.start to initialize a new network
+  # connection, authenticate a user, and return a new connection session, all in
+  # one call.
   class Session
     # Creates and returns a new SSH::Session object. If a host is given,
     # a connection is made.
@@ -119,37 +127,6 @@ module SSH
     # @return [ Boolean ]
     def userauth_method_supported?(user, method)
       userauth_methods(user).include? method
-    end
-
-    # A convenience method for executing a command.
-    #
-    # @param [ String ]         cmd  The command to execute.
-    # @param [ Hash<Symbol, _>] opts Additional options.
-    #
-    # @return [ String ] nil if the command could not be executed.
-    def exec(cmd, opts = {})
-      channel = Channel.new(self)
-      channel.open
-      channel.exec(cmd, opts)
-    ensure
-      channel.close
-    end
-
-    # Requests that a new channel be opened. By default, the channel will be of
-    # type "session", but if you know what you're doing you can select any of
-    # the channel types supported by the SSH protocol.
-    #
-    # @param See SSH::Channel#initialize
-    #
-    # @return [ Void ]
-    def open_channel(type = :session, pkg_size = nil, win_size = nil, cmd = nil, &block)
-      channel = Channel.new(self, type, pkg_size, win_size)
-
-      channel.open(cmd)
-
-      block ? yield(channel) && nil : channel
-    ensure
-      channel.close if block
     end
 
     private

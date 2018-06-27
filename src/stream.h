@@ -25,9 +25,13 @@
 extern "C" {
 #endif
 
+#ifndef MRB_SSH_TINY
+
 #include "mruby.h"
 
 void mrb_mruby_ssh_stream_init (mrb_state *mrb);
+
+#endif
 
 #ifdef __cplusplus
 }

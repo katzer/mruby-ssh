@@ -135,32 +135,3 @@ assert 'SSH::start' do
 
   assert_true session.closed?
 end
-
-SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
-  assert 'SSH::Session#exec' do
-    assert_equal "ETNA\n", ssh.exec('echo ETNA')
-    assert_equal 'ETNA',   ssh.exec('echo ETNA', chomp: true)
-    assert_equal 'ET',     ssh.exec('echo ETNA', 2)
-  end
-
-  assert 'SSH::Session#open_channel' do
-    channel = ssh.open_channel
-    called  = false
-
-    assert_kind_of SSH::Channel, channel
-    assert_true channel.open?
-    assert_equal 'session', channel.type
-
-    channel.close
-
-    ret = ssh.open_channel do |ch|
-      called = true
-
-      assert_kind_of SSH::Channel, ch
-      assert_true ch.open?
-    end
-
-    assert_true called
-    assert_nil ret
-  end
-end

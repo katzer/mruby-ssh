@@ -21,6 +21,12 @@
 # SOFTWARE.
 
 module SSH
+  # The channel abstraction. Multiple "channels" can be multiplexed onto a
+  # single SSH channel, each operating independently and seemingly in parallel.
+  #
+  # Channels are intended to be used asynchronously. You request that one be
+  # opened (via SSH::Session#open_channel), and when it is opened, your callback
+  # is invoked.
   class Channel
     # Instantiates a new channel on the given connection, of the given type,
     # and with the given id. This also sets the default maximum packet size

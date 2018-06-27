@@ -21,6 +21,8 @@
  * SOFTWARE.
  */
 
+#ifndef MRB_SSH_TINY
+
 #include "stream.h"
 #include "channel.h"
 
@@ -249,3 +251,5 @@ mrb_mruby_ssh_stream_init (mrb_state *mrb)
     mrb_define_const(mrb, cls, "STDIO",   mrb_fixnum_value(0));
     mrb_define_const(mrb, cls, "STDERR",  mrb_fixnum_value(SSH_EXTENDED_DATA_STDERR));
 }
+
+#endif

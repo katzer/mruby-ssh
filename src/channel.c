@@ -21,6 +21,8 @@
  * SOFTWARE.
  */
 
+#ifndef MRB_SSH_TINY
+
 #include "channel.h"
 
 #include "mruby.h"
@@ -375,3 +377,5 @@ mrb_mruby_ssh_channel_init (mrb_state *mrb)
     mrb_define_const(mrb, cls, "EXT_IGNORE", mrb_fixnum_value(LIBSSH2_CHANNEL_EXTENDED_DATA_IGNORE));
     mrb_define_const(mrb, cls, "EXT_MERGE",  mrb_fixnum_value(LIBSSH2_CHANNEL_EXTENDED_DATA_MERGE));
 }
+
+#endif

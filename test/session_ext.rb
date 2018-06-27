@@ -8,10 +8,10 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,22 +20,31 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-MRuby::Build.new do |conf|
-  toolchain ENV.fetch('TOOLCHAIN', :gcc)
+SSH.start('test.rebex.net', 'demo', password: 'password') do |ssh|
+  assert 'SSH::Session#exec' do
+    assert_equal "ETNA\n", ssh.exec('echo ETNA')
+    assert_equal 'ETNA',   ssh.exec('echo ETNA', chomp: true)
+    assert_equal 'ET',     ssh.exec('echo ETNA', 2)
+  end
 
-  conf.enable_debug
-  conf.enable_test
+  assert 'SSH::Session#open_channel' do
+    channel = ssh.open_channel
+    called  = false
 
-  conf.gem __dir__
-end
+    assert_kind_of SSH::Channel, channel
+    assert_true channel.open?
+    assert_equal 'session', channel.type
 
-MRuby::Build.new('MRB_SSH_TINY') do |conf|
-  toolchain ENV.fetch('TOOLCHAIN', :gcc)
+    channel.close
 
-  conf.enable_debug
-  conf.enable_test
+    ret = ssh.open_channel do |ch|
+      called = true
 
-  conf.cc.defines << 'MRB_SSH_TINY'
+      assert_kind_of SSH::Channel, ch
+      assert_true ch.open?
+    end
 
-  conf.gem __dir__
+    assert_true called
+    assert_nil ret
+  end
 end

@@ -31,6 +31,8 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   if target_win32?
     spec.cc.include_paths << "#{dir}/ssh2/win32"
     spec.linker.libraries += %w[ws2_32 advapi32]
+  else
+    spec.objs.delete objfile("#{build_dir}/src/getpass")
   end
 
   file "#{dir}/mbedtls" do
@@ -58,6 +60,14 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
 
   spec.objs += Dir["#{dir}/{mbedtls/library,ssh2/src,zlib}/*.c"].map! do |f|
     f.relative_path_from(dir).pathmap("#{build_dir}/%X#{spec.exts.object}")
+  end
+
+  if spec.mruby.cc.defines.include?('MRB_SSH_TINY')
+    %w[channel stream session_ext].each do |f|
+      spec.objs.delete objfile("#{build_dir}/src/#{f}")
+      spec.rbfiles.delete "#{spec.dir}/mrblib/ssh/#{f}.rb"
+      spec.test_rbfiles.delete "#{spec.dir}/test/#{f}.rb"
+    end
   end
 end
 

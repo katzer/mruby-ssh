@@ -25,6 +25,8 @@
 extern "C" {
 #endif
 
+#ifndef MRB_SSH_TINY
+
 #include "mruby.h"
 #include "mruby/ext/ssh.h"
 
@@ -42,6 +44,8 @@ void mrb_mruby_ssh_channel_init (mrb_state *mrb);
 
 mrb_ssh_t *mrb_ssh_session (mrb_state *mrb, mrb_value self);
 mrb_ssh_channel_t *mrb_ssh_channel_bang (mrb_state *mrb, mrb_value self);
+
+#endif
 
 #ifdef __cplusplus
 }

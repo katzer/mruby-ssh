@@ -27,8 +27,11 @@
 #endif
 
 #include "session.h"
-#include "channel.h"
-#include "stream.h"
+
+#ifndef MRB_SSH_TINY
+# include "channel.h"
+# include "stream.h"
+#endif
 
 #include "mruby.h"
 #include "mruby/error.h"
@@ -141,8 +144,11 @@ mrb_mruby_ssh_gem_init (mrb_state *mrb)
     mrb_define_class_method(mrb, ssh, "ready?",   mrb_ssh_f_ready,    MRB_ARGS_NONE());
 
     mrb_mruby_ssh_session_init(mrb);
+
+#ifndef MRB_SSH_TINY
     mrb_mruby_ssh_channel_init(mrb);
     mrb_mruby_ssh_stream_init(mrb);
+#endif
 
     mrb_ssh_f_startup(mrb, mrb_nil_value());
 }
