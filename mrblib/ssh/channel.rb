@@ -117,17 +117,19 @@ module SSH
     # Syntactic sugar for executing a command. Sends a channel request asking
     # that the given command be invoked.
     #
-    # @param [ String ]         cmd  The command to execute.
-    # @param [ Hash<Symbol, _>] opts Additional options.
+    # @param [ String ]         cmd        The command to execute.
+    # @param [ Hash<Symbol, _>] opts       Additional options.
+    # @param [ Boolean ]        wait_closed Wait until closed on remote site.
+    #                                       Defaults to: true
     #
     # @return [ String ] nil if the subsystem could not be requested.
-    def exec(cmd, opts = nil)
+    def exec(cmd, opts = nil, wait_closed = true)
       request('exec', cmd, EXT_IGNORE)
       Stream.new(self).gets(opts)
     rescue SSH::ChannelRequestFailed
       nil
     ensure
-      close(true)
+      close(wait_closed)
     end
 
     # Open stdin and stdout streams and start remote executable.
