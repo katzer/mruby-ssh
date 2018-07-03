@@ -49,19 +49,21 @@ mrb_ssh_channel_free3 (mrb_state *mrb, void *p, mrb_bool wait)
     int exitcode = 0;
     mrb_ssh_channel_t *data;
     LIBSSH2_CHANNEL *channel;
+    mrb_ssh_t *ssh;
 
     if (!p) return exitcode;
 
     data    = (mrb_ssh_channel_t *)p;
+    ssh     = data->session->data;
     channel = data->channel;
 
-    if (channel && data->session->data && mrb_ssh_initialized()) {
-        libssh2_channel_close(channel);
-
+    if (channel && ssh && mrb_ssh_initialized()) {
         if (wait == TRUE) {
-            while (libssh2_channel_wait_closed(channel) == LIBSSH2_ERROR_EAGAIN) {
-                mrb_ssh_wait_socket(data->session->data);
-            }
+            while (libssh2_channel_close(channel)       == LIBSSH2_ERROR_EAGAIN) { mrb_ssh_wait_socket(ssh); }
+            while (libssh2_channel_wait_eof(channel)    == LIBSSH2_ERROR_EAGAIN) { mrb_ssh_wait_socket(ssh); }
+            while (libssh2_channel_wait_closed(channel) == LIBSSH2_ERROR_EAGAIN) { mrb_ssh_wait_socket(ssh); }
+        } else {
+            libssh2_channel_close(channel);
         }
 
         exitcode = libssh2_channel_get_exit_status(channel);
