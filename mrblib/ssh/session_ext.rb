@@ -39,7 +39,7 @@ module SSH
     def exec(cmd, opts = nil)
       channel = Channel.new(self)
       channel.open
-      channel.exec(cmd, opts)
+      channel.exec(cmd, opts, false)
     ensure
       channel.close
     end
