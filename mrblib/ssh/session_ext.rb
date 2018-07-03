@@ -36,7 +36,7 @@ module SSH
     # @param [ Hash<Symbol, _>] opts Additional options.
     #
     # @return [ String ] nil if the command could not be executed.
-    def exec(cmd, opts = {})
+    def exec(cmd, opts = nil)
       channel = Channel.new(self)
       channel.open
       channel.exec(cmd, opts)
