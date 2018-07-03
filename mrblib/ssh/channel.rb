@@ -121,7 +121,7 @@ module SSH
     # @param [ Hash<Symbol, _>] opts Additional options.
     #
     # @return [ String ] nil if the subsystem could not be requested.
-    def exec(cmd, opts = {})
+    def exec(cmd, opts = nil)
       request('exec', cmd, EXT_IGNORE)
       Stream.new(self).gets(opts)
     rescue SSH::ChannelRequestFailed
