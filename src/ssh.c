@@ -41,6 +41,7 @@
 #include <libssh2.h>
 
 static int mrb_ssh_ready = 0;
+static size_t mrb_main_p = 0;
 
 static mrb_value
 mrb_ssh_f_startup (mrb_state *mrb, mrb_value self)
@@ -150,11 +151,18 @@ mrb_mruby_ssh_gem_init (mrb_state *mrb)
     mrb_mruby_ssh_stream_init(mrb);
 #endif
 
+    if (mrb_main_p == 0) {
+        mrb_main_p = (size_t)mrb;
+    }
+
     mrb_ssh_f_startup(mrb, mrb_nil_value());
 }
 
 void
 mrb_mruby_ssh_gem_final (mrb_state *mrb)
 {
-    mrb_ssh_f_shutdown(mrb, mrb_nil_value());
+    if (mrb_main_p == (size_t) mrb) {
+        mrb_ssh_f_shutdown(mrb, mrb_nil_value());
+        mrb_main_p = 0;
+    }
 }
