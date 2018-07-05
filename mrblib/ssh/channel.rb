@@ -168,7 +168,7 @@ module SSH
     # @param [ Hash<Symbol, _>] opts Additional options.
     #
     # @return [ String ] nil if the subsystem could not be requested.
-    def capture2(cmd, opts = {})
+    def capture2(cmd, opts = nil)
       __capture__(cmd, opts, EXT_IGNORE)
     end
 
@@ -178,7 +178,7 @@ module SSH
     # @param [ Hash<Symbol, _>] opts Additional options.
     #
     # @return [ String ] nil if the subsystem could not be requested.
-    def capture2e(cmd, opts = {})
+    def capture2e(cmd, opts = nil)
       __capture__(cmd, opts, EXT_MERGE)
     end
 
@@ -188,7 +188,7 @@ module SSH
     # @param [ Hash<Symbol, _>] opts Additional options.
     #
     # @return [ String ] nil if the subsystem could not be requested.
-    def capture3(cmd, opts = {})
+    def capture3(cmd, opts = nil)
       __capture__(cmd, opts, EXT_NORMAL)
     end
 
