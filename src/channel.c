@@ -144,7 +144,7 @@ mrb_ssh_f_open (mrb_state *mrb, mrb_value self)
     type_len = mrb_string_value_len(mrb, type);
 
     do {
-        channel = libssh2_channel_open_ex(ssh->session, ctype, type_len, win_size, pkg_size, msg, msg_len);
+        channel = libssh2_channel_open_ex(ssh->session, ctype, (unsigned int)type_len, (unsigned int)win_size, (unsigned int)pkg_size, msg, (unsigned int)msg_len);
 
         if (channel) break;
 
@@ -181,7 +181,7 @@ mrb_ssh_f_request (mrb_state *mrb, mrb_value self)
         mrb_ssh_wait_socket(ssh);
     }
 
-    while ((rc = libssh2_channel_process_startup(data->channel, req, req_len, msg, msg_len)) == LIBSSH2_ERROR_EAGAIN) {
+    while ((rc = libssh2_channel_process_startup(data->channel, req, (unsigned int)req_len, msg, (unsigned int)msg_len)) == LIBSSH2_ERROR_EAGAIN) {
         mrb_ssh_wait_socket(ssh);
     }
 
@@ -257,7 +257,7 @@ mrb_ssh_f_env (mrb_state *mrb, mrb_value self)
 
     mrb_get_args(mrb, "ss", &env, &env_len, &val, &val_len);
 
-    while ((rc = libssh2_channel_setenv_ex(data->channel, env, env_len, val, val_len)) == LIBSSH2_ERROR_EAGAIN) {
+    while ((rc = libssh2_channel_setenv_ex(data->channel, env, (unsigned int)env_len, val, (unsigned int)val_len)) == LIBSSH2_ERROR_EAGAIN) {
         mrb_ssh_wait_socket(ssh);
     }
 

@@ -88,8 +88,8 @@ mrb_ssh_f_gets (mrb_state *mrb, mrb_value self)
     mrb_value arg, opts, res, buf = mrb_attr_get(mrb, self, SYM_BUF);
     mrb_bool arg_given            = FALSE, mem_size_given = FALSE;
     size_t mem_size               = 256;
-    mrb_int sep_len               = 0;
-    int pos, chomp                = FALSE;
+    mrb_int pos, sep_len          = 0;
+    int chomp                     = FALSE;
     const char *sep               = NULL;
     char *mem                     = NULL;
 

@@ -71,7 +71,7 @@ getpass (const char *prompt)
       fflush (stderr);
     }
 
-  return strdup (getpassbuf);
+  return _strdup (getpassbuf);
 }
 
 #endif

@@ -46,7 +46,7 @@
 #endif
 
 static void
-mrb_ssh_close_socket (int sock)
+mrb_ssh_close_socket (libssh2_socket_t sock)
 {
 #ifdef WIN32
     closesocket(sock);
@@ -74,7 +74,7 @@ mrb_ssh_session_free(mrb_state *mrb, void *p)
         };
     }
 
-    mrb_ssh_close_socket(ssh->sock);
+    mrb_ssh_close_socket((int)ssh->sock);
 
     mrb_free(mrb, ssh);
 }
@@ -102,7 +102,7 @@ mrb_ssh_wait_socket (mrb_ssh_t *ssh)
     if (dir & LIBSSH2_SESSION_BLOCK_OUTBOUND)
         write_fd = &fd;
 
-    rc = select(ssh->sock + 1, read_fd, write_fd, NULL, &timeout);
+    rc = select((int)ssh->sock + 1, read_fd, write_fd, NULL, &timeout);
 
     return rc;
 }
@@ -140,10 +140,11 @@ mrb_ssh_host_to_ip (int family, const char *host)
 }
 
 static int
-mrb_ssh_init_socket (mrb_state *mrb, int family, const char *host, int port, int *ptr)
+mrb_ssh_init_socket (mrb_state *mrb, int family, const char *host, int port, libssh2_socket_t *ptr)
 {
     struct sockaddr_in sin;
-    int sock, rc;
+    libssh2_socket_t sock;
+    int rc;
     char *ip;
 
     sock = socket(family, SOCK_STREAM, 0);
@@ -167,7 +168,7 @@ mrb_ssh_init_socket (mrb_state *mrb, int family, const char *host, int port, int
 }
 
 static int
-mrb_ssh_init_session (int sock, LIBSSH2_SESSION **ptr, int blocking, long timeout, int compress, int sigpipe)
+mrb_ssh_init_session (libssh2_socket_t sock, LIBSSH2_SESSION **ptr, int blocking, long timeout, int compress, int sigpipe)
 {
     LIBSSH2_SESSION *session;
     int rc;
@@ -218,7 +219,7 @@ kbd_func (const char *name, int name_len, const char *inst, int inst_len,
 
     if (num_prompts == 1) {
         responses[0].text   = strdup(pass);
-        responses[0].length = strlen(pass);
+        responses[0].length = (unsigned int)strlen(pass);
     }
 
     (void)prompts;
@@ -234,7 +235,8 @@ mrb_ssh_f_connect (mrb_state *mrb, mrb_value self)
 
     mrb_ssh_t *ssh;
     LIBSSH2_SESSION *session;
-    int sock, blocking = 1, port = 22, compress = 0, sigpipe = 0, ret;
+    libssh2_socket_t sock;
+    int blocking = 1, port = 22, compress = 0, sigpipe = 0, ret;
     long timeout = 15000;
 
     if (DATA_PTR(self)) {
@@ -260,7 +262,7 @@ mrb_ssh_f_connect (mrb_state *mrb, mrb_value self)
     }
 
     ssh            = mrb_malloc(mrb, sizeof(mrb_ssh_t));
-    ssh->sock      = sock;
+    ssh->sock      = (libssh2_socket_t)sock;
     ssh->session   = session;
 
     mrb_data_init(self, ssh, &mrb_ssh_session_type);
@@ -312,11 +314,11 @@ mrb_ssh_f_login (mrb_state *mrb, mrb_value self)
     }
 
     if (pass_is_key) {
-        while ((ret = libssh2_userauth_publickey_fromfile_ex(ssh->session, user, user_len, pubkey, pass, phrase)) == LIBSSH2_ERROR_EAGAIN);
+        while ((ret = libssh2_userauth_publickey_fromfile_ex(ssh->session, user, (unsigned int)user_len, pubkey, pass, phrase)) == LIBSSH2_ERROR_EAGAIN);
     } else if (!prompt || (pass_given && pass)) {
-        while ((ret = libssh2_userauth_password_ex(ssh->session, user, user_len, pass, pass_len, NULL)) == LIBSSH2_ERROR_EAGAIN);
+        while ((ret = libssh2_userauth_password_ex(ssh->session, user, (unsigned int)user_len, pass, (unsigned int)pass_len, NULL)) == LIBSSH2_ERROR_EAGAIN);
     } else {
-        while ((ret = libssh2_userauth_keyboard_interactive_ex(ssh->session, user, user_len, &kbd_func)) == LIBSSH2_ERROR_EAGAIN);
+        while ((ret = libssh2_userauth_keyboard_interactive_ex(ssh->session, user, (unsigned int)user_len, &kbd_func)) == LIBSSH2_ERROR_EAGAIN);
     }
 
     mrb_free(mrb, pubkey);
@@ -443,7 +445,7 @@ mrb_ssh_f_userauth_list (mrb_state *mrb, mrb_value self)
 
     mrb_get_args(mrb, "s", &user, &user_len);
 
-    authlist = libssh2_userauth_list(ssh->session, user, user_len);
+    authlist = libssh2_userauth_list(ssh->session, user, (unsigned int)user_len);
 
     return mrb_str_new_cstr(mrb, authlist);
 }
