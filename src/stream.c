@@ -185,7 +185,7 @@ mrb_ssh_f_gets (mrb_state *mrb, mrb_value self)
     }
 
     if (chomp && mrb_string_p(res)) {
-        mrb_funcall(mrb, res, "chop!", 0);
+        mrb_funcall(mrb, res, "chomp!", 0);
     }
 
     return res;
