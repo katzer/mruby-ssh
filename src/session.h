@@ -21,18 +21,14 @@
  * SOFTWARE.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "mruby.h"
+
+MRB_BEGIN_DECL
 
 #ifdef _WIN32
 # define _WIN32_WINNT _WIN32_WINNT_VISTA
 #endif
 
-#include "mruby.h"
-
 void mrb_mruby_ssh_session_init (mrb_state *mrb);
 
-#ifdef __cplusplus
-}
-#endif
+MRB_END_DECL

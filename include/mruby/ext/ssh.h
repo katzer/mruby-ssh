@@ -24,11 +24,10 @@
 #ifndef MRUBY_SSH_H
 #define MRUBY_SSH_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+#include <mruby.h>
 #include <libssh2.h>
+
+MRB_BEGIN_DECL
 
 struct mrb_ssh
 {
@@ -49,12 +48,11 @@ typedef struct mrb_ssh mrb_ssh_t;
 #define E_SSH_HOST_KEY_ERROR         (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "HostKeyError"))
 #define E_SSH_TIMEOUT_ERROR          (mrb_class_get_under(mrb, mrb_module_get(mrb, "SSH"), "Timeout"))
 
-unsigned int mrb_ssh_initialized();
-int mrb_ssh_wait_socket (mrb_ssh_t *ssh);
-void mrb_ssh_raise_last_error (mrb_state *mrb, mrb_ssh_t *ssh);
-void mrb_ssh_raise (mrb_state *mrb, int err, const char* msg);
+MRB_API unsigned int mrb_ssh_initialized();
+MRB_API int mrb_ssh_wait_socket (mrb_ssh_t *ssh);
+MRB_API void mrb_ssh_raise_last_error (mrb_state *mrb, mrb_ssh_t *ssh);
+MRB_API void mrb_ssh_raise (mrb_state *mrb, int err, const char* msg);
 
-#ifdef __cplusplus
-}
-#endif
+MRB_END_DECL
+
 #endif

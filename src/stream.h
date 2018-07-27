@@ -21,18 +21,14 @@
  * SOFTWARE.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef MRB_SSH_TINY
 
 #include "mruby.h"
 
+MRB_BEGIN_DECL
+
 void mrb_mruby_ssh_stream_init (mrb_state *mrb);
 
-#endif
+MRB_END_DECL
 
-#ifdef __cplusplus
-}
 #endif
