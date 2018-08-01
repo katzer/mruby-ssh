@@ -45,7 +45,7 @@
 # include <unistd.h>
 #endif
 
-static void
+static inline void
 mrb_ssh_close_socket (libssh2_socket_t sock)
 {
 #ifdef WIN32
@@ -198,7 +198,7 @@ mrb_ssh_init_session (libssh2_socket_t sock, LIBSSH2_SESSION **ptr, int blocking
     return rc;
 }
 
-static void
+static inline void
 mrb_ssh_raise_unless_connected (mrb_state *mrb, mrb_ssh_t *ssh)
 {
     if (ssh && ssh->session) return;

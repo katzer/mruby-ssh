@@ -37,7 +37,7 @@
 #include <libssh2.h>
 
 #if MRUBY_RELEASE_NO < 10400
-static mrb_int
+static inline mrb_int
 mrb_str_index(mrb_state *mrb, mrb_value str, const char *lit, mrb_int len, mrb_int off)
 {
     mrb_value pos = mrb_funcall(mrb, str, "index", 2, mrb_str_new_static(mrb, lit, len), mrb_fixnum_value(off));
@@ -51,7 +51,7 @@ static mrb_value KEY_CHOMP;
 
 static int MAX_READ_SIZE = 0x4000;
 
-static int
+static inline int
 mrb_ssh_stream_id (mrb_state *mrb, mrb_value self)
 {
     return (int) mrb_fixnum(mrb_attr_get(mrb, self, SYM_ID));

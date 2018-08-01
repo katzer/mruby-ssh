@@ -76,7 +76,7 @@ mrb_ssh_channel_free3 (mrb_state *mrb, void *p, mrb_bool wait)
     return exitcode;
 }
 
-static int
+static inline int
 mrb_ssh_channel_free (mrb_state *mrb, void *p)
 {
     return mrb_ssh_channel_free3(mrb, p, FALSE);
@@ -84,7 +84,7 @@ mrb_ssh_channel_free (mrb_state *mrb, void *p)
 
 static mrb_data_type const mrb_ssh_channel_type = { "SSH::Channel", (void *)mrb_ssh_channel_free };
 
-static void
+static inline void
 mrb_ssh_raise_unless_opened (mrb_state *mrb, mrb_ssh_channel_t *channel)
 {
     if (channel && channel->session->data && mrb_ssh_initialized()) return;
