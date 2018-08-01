@@ -88,7 +88,7 @@ mrb_ssh_f_ready (mrb_state *mrb, mrb_value self)
     return mrb_bool_value(mrb_ssh_ready);
 }
 
-unsigned int
+inline unsigned int
 mrb_ssh_initialized()
 {
     return mrb_ssh_ready;

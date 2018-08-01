@@ -91,7 +91,7 @@ mrb_ssh_raise_unless_opened (mrb_state *mrb, mrb_ssh_channel_t *channel)
     mrb_raise(mrb, E_SSH_CHANNEL_CLOSED_ERROR, "SSH channel not opened.");
 }
 
-mrb_ssh_t *
+inline mrb_ssh_t *
 mrb_ssh_session (mrb_state *mrb, mrb_value self)
 {
     mrb_ssh_channel_t *channel = DATA_PTR(self);
@@ -99,7 +99,7 @@ mrb_ssh_session (mrb_state *mrb, mrb_value self)
     return channel && channel->session->data ? channel->session->data : NULL;
 }
 
-mrb_ssh_channel_t *
+inline mrb_ssh_channel_t *
 mrb_ssh_channel_bang (mrb_state *mrb, mrb_value self)
 {
     mrb_ssh_channel_t *channel = DATA_PTR(self);
