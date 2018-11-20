@@ -37,12 +37,10 @@ assert 'SSH::Stream' do
 end
 
 assert 'SSH::Stream::STDIO' do
-  assert_include SSH::Stream.constants, :STDIO
   assert_kind_of Integer, SSH::Stream::STDIO
 end
 
 assert 'SSH::Stream::STDERR' do
-  assert_include SSH::Stream.constants, :STDERR
   assert_kind_of Integer, SSH::Stream::STDERR
 end
 

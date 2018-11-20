@@ -35,7 +35,7 @@ assert 'SSH.shutdown' do
 end
 
 assert 'SSH.start' do
-  assert_include SSH.public_methods, :start
+  assert_kind_of SSH::Session, SSH.start
 end
 
 assert 'SSH::Exception' do

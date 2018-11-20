@@ -34,27 +34,22 @@ assert 'SSH::Channel' do
 end
 
 assert 'SSH::Channel::WINDOW_DEFAULT' do
-  assert_include SSH::Channel.constants, :WINDOW_DEFAULT
   assert_kind_of Integer, SSH::Channel::WINDOW_DEFAULT
 end
 
 assert 'SSH::Channel::PACKET_DEFAULT' do
-  assert_include SSH::Channel.constants, :PACKET_DEFAULT
   assert_kind_of Integer, SSH::Channel::PACKET_DEFAULT
 end
 
 assert 'SSH::Channel::EXT_NORMAL' do
-  assert_include SSH::Channel.constants, :EXT_NORMAL
   assert_kind_of Integer, SSH::Channel::EXT_NORMAL
 end
 
 assert 'SSH::Channel::EXT_IGNORE' do
-  assert_include SSH::Channel.constants, :EXT_IGNORE
   assert_kind_of Integer, SSH::Channel::EXT_IGNORE
 end
 
 assert 'SSH::Channel::EXT_MERGE' do
-  assert_include SSH::Channel.constants, :EXT_MERGE
   assert_kind_of Integer, SSH::Channel::EXT_MERGE
 end
 
@@ -80,25 +75,13 @@ end
 assert 'SSH::Channel#type' do
   channel = SSH::Channel.new(dummy)
   assert_true channel.type.frozen?
-  assert_false channel.methods.include? :type=
-end
-
-assert 'SSH::Channel#local_maximum_packet_size' do
-  channel = SSH::Channel.new(dummy)
-  assert_false channel.methods.include? :local_maximum_packet_size=
-end
-
-assert 'SSH::Channel#local_maximum_window_size' do
-  channel = SSH::Channel.new(dummy)
-  assert_false channel.methods.include? :local_maximum_window_size=
 end
 
 assert 'SSH::Channel#properties' do
   channel = SSH::Channel.new(dummy)
 
   assert_kind_of Hash, channel.properties
-  assert_true  channel.properties.empty?
-  assert_false channel.methods.include? :properties=
+  assert_true channel.properties.empty?
 
   channel[:key] = :value
 

@@ -52,7 +52,6 @@ assert 'SSH::Session#properties' do
 
   assert_kind_of Hash, ssh.properties
   assert_true  ssh.properties.empty?
-  assert_false ssh.methods.include? :properties=
 
   ssh[:key] = :value
 
