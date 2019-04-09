@@ -36,7 +36,7 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   end
 
   file "#{dir}/mbedtls" do
-    download_mbedtls(dir, ENV.fetch('MBET_VERSION', '2.16.0'))
+    download_mbedtls(dir, ENV.fetch('MBET_VERSION', '2.16.1'))
   end
 
   file "#{dir}/zlib" do
@@ -76,6 +76,7 @@ end
 # @return [ Boolean ]
 def target_win32?
   return true if ENV['OS'] == 'Windows_NT'
+
   build.is_a?(MRuby::CrossBuild) && build.host_target.to_s =~ /mingw/
 end
 
