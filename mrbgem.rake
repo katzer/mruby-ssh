@@ -44,7 +44,7 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   end
 
   file "#{dir}/ssh2" => "#{dir}/mbedtls" do
-    download_ssh2(dir, ENV.fetch('SSH2_VERSION', '1.8.0'))
+    download_ssh2(dir, ENV.fetch('SSH2_VERSION', '1.8.2'))
     cp "#{dir}/libssh2_config.h", "#{dir}/ssh2/src/"
   end
 
