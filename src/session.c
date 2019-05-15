@@ -189,7 +189,9 @@ mrb_ssh_init_session (libssh2_socket_t sock, LIBSSH2_SESSION **ptr, int blocking
 
     if (rc == 0) {
         *ptr = session;
+#if LIBSSH2_VERSION_NUM >= 0x010601
         libssh2_session_set_last_error(session, 0, NULL);
+#endif
     } else {
         mrb_ssh_close_socket(sock);
         libssh2_session_free(session);
