@@ -166,6 +166,26 @@ MRuby::Gem::Specification.new('your-mrbgem') do |spec|
 end
 ```
 
+### Debugging
+
+To trace additional debug informations at runtime add the line below to your `build_config.rb`:
+
+```ruby
+MRuby::Build.new do |conf|
+  # ... (snip) ...
+  conf.cc.defines << 'MRB_SSH_DEBUG'
+end
+```
+
+Or add this line to your aplication's `mrbgem.rake`:
+
+```ruby
+MRuby::Gem::Specification.new('your-mrbgem') do |spec|
+  # ... (snip) ...
+  spec.mruby.cc.defines << 'MRB_SSH_DEBUG'
+end
+```
+
 ## Development
 
 Clone the repo:

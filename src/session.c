@@ -180,6 +180,10 @@ mrb_ssh_init_session (libssh2_socket_t sock, LIBSSH2_SESSION **ptr, int blocking
         return 1;
     }
 
+#ifdef MRB_SSH_DEBUG
+    libssh2_trace(session, LIBSSH2_TRACE_KEX|LIBSSH2_TRACE_AUTH|LIBSSH2_TRACE_SFTP|LIBSSH2_TRACE_PUBLICKEY|LIBSSH2_TRACE_ERROR|LIBSSH2_TRACE_CONN|LIBSSH2_TRACE_TRANS);
+#endif
+
     libssh2_session_set_blocking(session, blocking);
     libssh2_session_set_timeout(session, timeout);
     libssh2_session_flag(session, LIBSSH2_FLAG_SIGPIPE, sigpipe);
