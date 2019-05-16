@@ -186,6 +186,26 @@ MRuby::Gem::Specification.new('your-mrbgem') do |spec|
 end
 ```
 
+### Dynamic linking
+
+For dynamic linking with _libssh2.so_ add the line below to your `build_config.rb`:
+
+```ruby
+MRuby::Build.new do |conf|
+  # ... (snip) ...
+  conf.cc.defines << 'MRB_SSH_LINK_LIB'
+end
+```
+
+Or add this line to your aplication's `mrbgem.rake`:
+
+```ruby
+MRuby::Gem::Specification.new('your-mrbgem') do |spec|
+  # ... (snip) ...
+  spec.mruby.cc.defines << 'MRB_SSH_LINK_LIB'
+end
+```
+
 ## Development
 
 Clone the repo:

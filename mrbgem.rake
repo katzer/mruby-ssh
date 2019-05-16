@@ -20,107 +20,66 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+require_relative 'lib/mruby/build'
+require_relative 'lib/mruby/specification'
+
+require_relative 'lib/ssh/downloader'
+
 MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   spec.license = 'MIT'
   spec.authors = 'Sebastian Katzer'
   spec.summary = 'SSH client for mruby'
 
-  spec.mruby.cc.defines     << 'HAVE_MRB_SSH_H'
-  spec.export_include_paths << "#{dir}/ssh2/include"
+  build.cc.defines << 'HAVE_MRB_SSH_H'
 
-  if target_win32?
-    spec.cc.include_paths << "#{dir}/ssh2/win32"
+  if build.targets_win32?
+    spec.cc.include_paths << "#{dir}/libssh2/win32"
     spec.linker.libraries += %w[ws2_32 advapi32]
   else
     spec.objs.delete objfile("#{build_dir}/src/getpass")
   end
 
   file "#{dir}/mbedtls" do
-    download_mbedtls(dir, ENV.fetch('MBET_VERSION', '2.16.1'))
+    download mbedtls: ENV.fetch('MBET_VERSION', '2.16.1')
+  end
+
+  task "#{build.name}:mbedtls" => "#{dir}/mbedtls" do
+    spec.cc.include_paths << "#{dir}/mbedtls/include"
+    spec.objs += Dir["#{dir}/mbedtls/library/*.c"].map! { |f| objfile_relative_from_build_dir(f) }
   end
 
   file "#{dir}/zlib" do
-    download_zlib(dir, ENV.fetch('ZLIB_VERSION', '1.2.11'))
+    download zlib: ENV.fetch('ZLIB_VERSION', '1.2.11')
   end
 
-  file "#{dir}/ssh2" => "#{dir}/mbedtls" do
-    download_ssh2(dir, ENV.fetch('SSH2_VERSION', '1.8.2'))
-    cp "#{dir}/libssh2_config.h", "#{dir}/ssh2/src/"
+  task "#{build.name}:zlib" => "#{dir}/zlib" do
+    spec.cc.include_paths << "#{dir}/zlib"
+    spec.objs += Dir["#{dir}/zlib/*.c"].map! { |f| objfile_relative_from_build_dir(f) }
   end
 
-  Rake::Task["#{dir}/ssh2"].invoke
+  file "#{dir}/libssh2" do
+    download libssh2: ENV.fetch('SSH2_VERSION', '1.8.2')
+    cp "#{dir}/libssh2_config.h", "#{dir}/libssh2/src/"
+  end
 
-  if spec.mruby.cc.defines.include? 'LIBSSH2_HAVE_ZLIB'
-    Rake::Task["#{dir}/zlib"].invoke
+  task "#{build.name}:libssh2" => %W[#{dir}/libssh2 mbedtls] do
+    spec.export_include_paths << "#{dir}/libssh2/include"
+    spec.cc.include_paths << "#{dir}/libssh2/include"
+    spec.objs += Dir["#{dir}/libssh2/src/*.c"].map! { |f| objfile_relative_from_build_dir(f) }
+  end
+
+  if build.link_lib?
+    spec.linker.libraries << 'ssh2'
   else
-    rm_rf "#{dir}/zlib"
+    Rake::Task["#{build.name}:libssh2"].invoke
+    Rake::Task["#{build.name}:zlib"].invoke if build.zlib?
   end
 
-  spec.cc.include_paths += Dir["#{dir}/{mbedtls/include,ssh2/include,zlib}"]
-
-  spec.objs += Dir["#{dir}/{mbedtls/library,ssh2/src,zlib}/*.c"].map! do |f|
-    f.relative_path_from(dir).pathmap("#{build_dir}/%X#{spec.exts.object}")
-  end
-
-  if spec.mruby.cc.defines.include?('MRB_SSH_TINY')
+  if build.tiny_ssh?
     %w[channel stream session_ext].each do |f|
       spec.objs.delete objfile("#{build_dir}/src/#{f}")
       spec.rbfiles.delete "#{spec.dir}/mrblib/ssh/#{f}.rb"
       spec.test_rbfiles.delete "#{spec.dir}/test/#{f}.rb"
     end
-  end
-end
-
-# If the build target points to Windows OS.
-#
-# @return [ Boolean ]
-def target_win32?
-  return true if ENV['OS'] == 'Windows_NT'
-
-  build.is_a?(MRuby::CrossBuild) && build.host_target.to_s =~ /mingw/
-end
-
-# Download mbedtls.
-#
-# @param [ String ] dir     The place where to place them.
-# @param [ String ] version The version to download.
-#                           Defaults to: head
-#
-# @return [ Void ]
-def download_mbedtls(dir, version = 'head')
-  if version == 'head'
-    sh "git clone --depth 1 git://github.com/ARMmbed/mbedtls.git #{dir}/mbedtls"
-  else
-    sh "curl -s --fail --retry 3 --retry-delay 1 https://tls.mbed.org/download/mbedtls-#{version}-apache.tgz | tar xzC . && mv mbedtls-#{version} #{dir}/mbedtls" # rubocop:disable LineLength
-  end
-end
-
-# Download libssh2.
-#
-# @param [ String ] dir     The place where to place them.
-# @param [ String ] version The version to download.
-#                           Defaults to: head
-#
-# @return [ Void ]
-def download_ssh2(dir, version = 'head')
-  if version == 'head'
-    sh "git clone --depth 1 git://github.com/libssh2/libssh2.git #{dir}/ssh2"
-  else
-    sh "curl -s --fail --retry 3 --retry-delay 1 https://www.libssh2.org/download/libssh2-#{version}.tar.gz | tar xzC . && mv libssh2-#{version} #{dir}/ssh2" # rubocop:disable LineLength
-  end
-end
-
-# Download zlib.
-#
-# @param [ String ] dir     The place where to place them.
-# @param [ String ] version The version to download.
-#                           Defaults to: head
-#
-# @return [ Void ]
-def download_zlib(dir, version = 'head')
-  if version == 'head'
-    sh "git clone --depth 1 git://github.com/madler/zlib.git #{dir}/zlib"
-  else
-    sh "curl -s --fail --retry 3 --retry-delay 1 http://zlib.net/zlib-#{version}.tar.gz | tar xzC . && mv zlib-#{version} #{dir}/zlib" # rubocop:disable LineLength
   end
 end

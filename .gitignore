@@ -51,6 +51,6 @@ build-iPhoneSimulator/
 
 ## mruby
 /mruby
-/ssh2
+/libssh2
 /mbedtls
 /zlib
