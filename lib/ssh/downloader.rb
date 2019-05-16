@@ -83,7 +83,8 @@ module SSH
     # @return [ Void ]
     def curl(url)
       folder = url.scan(/[a-z0-9]+(?=-)/)[0]
-      sh "curl -s --fail --retry 3 --retry-delay 1 #{url} | tar xzC . && find . -maxdepth 1 -name '#{folder}-*' -exec mv '{}' #{@dir}/#{folder} \\;" # rubocop:disable LineLength
+      sh "curl -s --fail --retry 3 --retry-delay 1 #{url} | tar xzC ."
+      Dir["#{folder}-*"].each { |path| mv path, "#{@dir}/#{folder}" }
     end
   end
 end
