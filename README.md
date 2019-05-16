@@ -125,18 +125,9 @@ See [channel.rb](mrblib/channel.rb) and [channel.c](src/channel.c) for a complet
 Add the line below to your `build_config.rb`:
 
 ```ruby
-MRuby::Build.new do |conf|
+MRuby::Build.new do |build|
   # ... (snip) ...
-  conf.cc.defines += %w[LIBSSH2_HAVE_ZLIB HAVE_UNISTD_H]
-end
-```
-
-Or add this line to your aplication's `mrbgem.rake`:
-
-```ruby
-MRuby::Gem::Specification.new('your-mrbgem') do |spec|
-  # ... (snip) ...
-  spec.mruby.cc.defines += %w[LIBSSH2_HAVE_ZLIB HAVE_UNISTD_H]
+  build.cc.defines += %w[LIBSSH2_HAVE_ZLIB HAVE_UNISTD_H]
 end
 ```
 
@@ -151,18 +142,9 @@ SSH.start('test.rebex.net', 'demo', password: 'password', compress: true)
 To initiate SSH sessions within threads add the line below to your `build_config.rb`:
 
 ```ruby
-MRuby::Build.new do |conf|
+MRuby::Build.new do |build|
   # ... (snip) ...
-  conf.cc.defines += %w[MBEDTLS_THREADING_PTHREAD MBEDTLS_THREADING_C]
-end
-```
-
-Or add this line to your aplication's `mrbgem.rake`:
-
-```ruby
-MRuby::Gem::Specification.new('your-mrbgem') do |spec|
-  # ... (snip) ...
-  spec.mruby.cc.defines += %w[MBEDTLS_THREADING_PTHREAD MBEDTLS_THREADING_C]
+  build.cc.defines += %w[MBEDTLS_THREADING_PTHREAD MBEDTLS_THREADING_C]
 end
 ```
 
@@ -171,18 +153,9 @@ end
 To trace additional debug informations at runtime add the line below to your `build_config.rb`:
 
 ```ruby
-MRuby::Build.new do |conf|
+MRuby::Build.new do |build|
   # ... (snip) ...
-  conf.cc.defines << 'MRB_SSH_DEBUG'
-end
-```
-
-Or add this line to your aplication's `mrbgem.rake`:
-
-```ruby
-MRuby::Gem::Specification.new('your-mrbgem') do |spec|
-  # ... (snip) ...
-  spec.mruby.cc.defines << 'MRB_SSH_DEBUG'
+  build.cc.defines << 'MRB_SSH_DEBUG'
 end
 ```
 
@@ -191,18 +164,19 @@ end
 For dynamic linking with _libssh2.so_ add the line below to your `build_config.rb`:
 
 ```ruby
-MRuby::Build.new do |conf|
+MRuby::Build.new do |build|
   # ... (snip) ...
-  conf.cc.defines << 'MRB_SSH_LINK_LIB'
+  build.cc.defines << 'MRB_SSH_LINK_LIB'
 end
 ```
 
-Or add this line to your aplication's `mrbgem.rake`:
+To only link the crypto backend at runtime (e.g. OpenSSL) add the line below to your `build_config.rb`:
 
 ```ruby
-MRuby::Gem::Specification.new('your-mrbgem') do |spec|
+MRuby::Build.new do |build|
   # ... (snip) ...
-  spec.mruby.cc.defines << 'MRB_SSH_LINK_LIB'
+  build.cc.defines += %w[MRB_SSH_LINK_CRYPTO LIBSSH2_OPENSSL]
+  build.linker.libraries += %w[ssl crypto]
 end
 ```
 

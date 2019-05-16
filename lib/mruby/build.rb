@@ -43,6 +43,14 @@ class MRuby::Build
     cc.defines.include? 'MRB_SSH_LINK_LIB'
   end
 
+  # Link dynamically with a custom crypto lib
+  # instead of statically linked with mbedtls.
+  #
+  # @return [ Boolean ]
+  def link_crypto?
+    cc.defines.include?('MRB_SSH_LINK_CRYPTO')
+  end
+
   # Compile libssh2 with zlib support
   # for compression.
   #

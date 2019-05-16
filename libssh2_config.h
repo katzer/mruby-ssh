@@ -22,7 +22,9 @@
  */
 
 /* Use mbedtls */
-#define LIBSSH2_MBEDTLS 1
+#ifndef MRB_SSH_LINK_CRYPTO
+# define LIBSSH2_MBEDTLS 1
+#endif
 
 /* Enable debugging and activate tracing */
 #ifdef MRB_SSH_DEBUG

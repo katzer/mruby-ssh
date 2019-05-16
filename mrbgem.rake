@@ -45,7 +45,7 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
 
   task "#{build.name}:mbedtls" => "#{dir}/mbedtls" do
     spec.cc.include_paths << "#{dir}/mbedtls/include"
-    spec.objs += Dir["#{dir}/mbedtls/library/*.c"].map! { |f| objfile_relative_from_build_dir(f) }
+    spec.objs += objfiles_relative_from_build_dir('mbedtls/library/*.c')
   end
 
   file "#{dir}/zlib" do
@@ -54,7 +54,7 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
 
   task "#{build.name}:zlib" => "#{dir}/zlib" do
     spec.cc.include_paths << "#{dir}/zlib"
-    spec.objs += Dir["#{dir}/zlib/*.c"].map! { |f| objfile_relative_from_build_dir(f) }
+    spec.objs += objfiles_relative_from_build_dir('zlib/*.c')
   end
 
   file "#{dir}/libssh2" do
@@ -62,16 +62,17 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
     cp "#{dir}/libssh2_config.h", "#{dir}/libssh2/src/"
   end
 
-  task "#{build.name}:libssh2" => %W[#{dir}/libssh2 mbedtls] do
+  task "#{build.name}:libssh2" => "#{dir}/libssh2" do
     spec.export_include_paths << "#{dir}/libssh2/include"
     spec.cc.include_paths << "#{dir}/libssh2/include"
-    spec.objs += Dir["#{dir}/libssh2/src/*.c"].map! { |f| objfile_relative_from_build_dir(f) }
+    spec.objs += objfiles_relative_from_build_dir('libssh2/src/*.c')
   end
 
   if build.link_lib?
     spec.linker.libraries << 'ssh2'
   else
     Rake::Task["#{build.name}:libssh2"].invoke
+    Rake::Task["#{build.name}:mbedtls"].invoke unless build.link_crypto?
     Rake::Task["#{build.name}:zlib"].invoke if build.zlib?
   end
 

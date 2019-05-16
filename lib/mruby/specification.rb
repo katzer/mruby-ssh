@@ -31,13 +31,15 @@ class MRuby::Gem::Specification
     (@__downloader ||= SSH::Downloader.new(dir)).download(*args.first)
   end
 
-  # Converts the path of the source file (e.g. file.c)
-  # into the path for the object file (e.g. file.o).
+  # Converts the path of the source files (e.g. file.c)
+  # into the path for the object files (e.g. file.o).
   #
-  # @param [ Pathname ] path The path of the sourcefile
+  # @param [ String ] fnmach_path A fnmatch path.
   #
-  # @return [ Pathname ]
-  def objfile_relative_from_build_dir(path)
-    path.relative_path_from(dir).pathmap("#{build_dir}/%X#{exts.object}")
+  # @return [ Array<Pathname> ]
+  def objfiles_relative_from_build_dir(fnmach_path)
+    Dir["#{dir}/#{fnmach_path}"].map! do |f|
+      f.relative_path_from(dir).pathmap("#{build_dir}/%X#{exts.object}")
+    end
   end
 end
