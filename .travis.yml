@@ -28,14 +28,13 @@ compiler:
 
 env:
 - MRUBY_VERSION=stable
-- MRUBY_VERSION=stable SSH2_VERSION=head
 - MRUBY_VERSION=head
-- MRUBY_VERSION=head MBED_VERSION=head SSH2_VERSION=head
+- MRUBY_VERSION=head MBEDTLS_VERSION=head LIBSSH2_VERSION=head
 
 matrix:
   allow_failures:
   - env: MRUBY_VERSION=head
-  - env: MRUBY_VERSION=head MBED_VERSION=head SSH2_VERSION=head
+  - env: MRUBY_VERSION=head MBEDTLS_VERSION=head LIBSSH2_VERSION=head
 
 before_script:
 - export TOOLCHAIN=$CC
