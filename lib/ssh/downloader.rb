@@ -23,21 +23,27 @@
 require 'rake/file_utils'
 
 module SSH
-  # Knows how to download dependencies.
   class Downloader
-    # List of GitHub repositories
-    REPOS = {
-      mbedtls: 'ARMmbed/mbedtls',
-      libssh2: 'libssh2/libssh2',
-      zlib: 'madler/zlib'
-    }.freeze
+    # Tells the downloaded from where to download the source.
+    #
+    # @param [ Symbol ] name    The name of the library.
+    # @param [ String ] archive The URL to the release archives.
+    # @param [ String ] github  The URL to the git repository.
+    #
+    # @return [ Void ]
+    def self.add_source(name, archive:, github:)
+      (@@archives ||= {})[name] = archive
+      (@@repos ||= {})[name] = github
+    end
 
-    # List of URI from where to download the archive
-    ARCHIVES = {
-      mbedtls: 'https://tls.mbed.org/download/mbedtls-%s-apache.tgz',
-      libssh2: 'https://www.libssh2.org/download/libssh2-%s.tar.gz',
-      zlib: 'http://zlib.net/zlib-%s.tar.gz'
-    }.freeze
+    add_source :mbedtls, archive: 'https://tls.mbed.org/download/mbedtls-%s-apache.tgz',
+                         github: 'ARMmbed/mbedtls'
+
+    add_source :libssh2, archive: 'https://www.libssh2.org/download/libssh2-%s.tar.gz',
+                         github: 'libssh2/libssh2'
+
+    add_source :zlib, archive: 'http://zlib.net/zlib-%s.tar.gz',
+                      github: 'madler/zlib'
 
     include Rake::FileUtilsExt
 
@@ -58,9 +64,9 @@ module SSH
     # @return [ Void ]
     def download(name, version = 'head')
       if version == 'head'
-        git_clone REPOS[name]
+        git_clone @@repos[name]
       else
-        curl format(ARCHIVES[name], version)
+        curl format(@@archives[name], version)
       end
     end
 
