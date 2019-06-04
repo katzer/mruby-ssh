@@ -316,7 +316,7 @@ mrb_ssh_f_login (mrb_state *mrb, mrb_value self)
     if (pass_is_key && pass_given) {
         pubkey = (char *)mrb_malloc(mrb, sizeof(char) * (pass_len + 4 + 1));
         strcpy(pubkey, pass);
-        strncat(pubkey, ".pub", 4);
+        strcat(pubkey, ".pub");
     }
 
     if (pass_is_key) {
