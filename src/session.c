@@ -181,7 +181,7 @@ mrb_ssh_init_session (libssh2_socket_t sock, LIBSSH2_SESSION **ptr, int blocking
     }
 
 #ifdef MRB_SSH_DEBUG
-    libssh2_trace(session, LIBSSH2_TRACE_KEX|LIBSSH2_TRACE_AUTH|LIBSSH2_TRACE_SFTP|LIBSSH2_TRACE_PUBLICKEY|LIBSSH2_TRACE_ERROR|LIBSSH2_TRACE_CONN|LIBSSH2_TRACE_TRANS);
+    libssh2_trace(session, LIBSSH2_TRACE_KEX|LIBSSH2_TRACE_AUTH|LIBSSH2_TRACE_SFTP|LIBSSH2_TRACE_PUBLICKEY|LIBSSH2_TRACE_ERROR|LIBSSH2_TRACE_CONN);
 #endif
 
     libssh2_session_set_blocking(session, blocking);
