@@ -84,18 +84,20 @@ mrb_ssh_f_gets (mrb_state *mrb, mrb_value self)
     int stream              = mrb_ssh_stream_id(mrb, self);
     mrb_ssh_t *ssh          = mrb_ssh_session(mrb, self);
     mrb_ssh_channel_t *data = mrb_ssh_channel_bang(mrb, self);
+    mrb_value buf           = mrb_attr_get(mrb, self, SYM_BUF);
+    mrb_bool arg_given      = FALSE;
+    mrb_bool opts_given     = FALSE;
+    mrb_bool mem_size_given = FALSE;
+    size_t mem_size         = 256;
+    mrb_int pos, sep_len    = 0;
+    int chomp               = FALSE;
+    const char *sep         = NULL;
+    char *mem               = NULL;
+    mrb_value arg, opts, res;
 
-    mrb_value arg, opts, res, buf = mrb_attr_get(mrb, self, SYM_BUF);
-    mrb_bool arg_given            = FALSE, mem_size_given = FALSE;
-    size_t mem_size               = 256;
-    mrb_int pos, sep_len          = 0;
-    int chomp                     = FALSE;
-    const char *sep               = NULL;
-    char *mem                     = NULL;
+    mrb_get_args(mrb, "|o?H!?", &arg, &arg_given, &opts, &opts_given);
 
-    mrb_get_args(mrb, "|o?H!", &arg, &arg_given, &opts);
-
-    if (mrb_hash_p(opts)) {
+    if (opts_given && mrb_hash_p(opts)) {
         chomp = mrb_type(mrb_hash_get(mrb, opts, KEY_CHOMP)) == MRB_TT_TRUE;
     }
 
@@ -109,6 +111,7 @@ mrb_ssh_f_gets (mrb_state *mrb, mrb_value self)
         chomp   = mrb_type(mrb_hash_get(mrb, arg, KEY_CHOMP)) == MRB_TT_TRUE;
     } else
     if (arg_given && mrb_fixnum_p(arg)) {
+
         mem_size       = (int)mrb_fixnum(arg);
         mem_size_given = TRUE;
     } else
