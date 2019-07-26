@@ -111,7 +111,6 @@ mrb_ssh_f_gets (mrb_state *mrb, mrb_value self)
         chomp   = mrb_type(mrb_hash_get(mrb, arg, KEY_CHOMP)) == MRB_TT_TRUE;
     } else
     if (arg_given && mrb_fixnum_p(arg)) {
-
         mem_size       = (int)mrb_fixnum(arg);
         mem_size_given = TRUE;
     } else
