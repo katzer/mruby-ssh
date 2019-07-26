@@ -37,13 +37,13 @@ module SSH
     end
 
     add_source :mbedtls, archive: 'https://tls.mbed.org/download/mbedtls-%s-apache.tgz',
-                         github: 'ARMmbed/mbedtls#master'
+                         github: ENV.fetch('MBETTLS_SOURCE', 'ARMmbed/mbedtls#master')
 
     add_source :libssh2, archive: 'https://www.libssh2.org/download/libssh2-%s.tar.gz',
-                         github: 'libssh2/libssh2#master'
+                         github: ENV.fetch('LIBSSH2_SOURCE', 'libssh2/libssh2#master')
 
     add_source :zlib, archive: 'http://zlib.net/zlib-%s.tar.gz',
-                      github: 'madler/zlib#master'
+                      github: ENV.fetch('ZLIB_SOURCE', 'madler/zlib#master')
 
     include Rake::FileUtilsExt
 
