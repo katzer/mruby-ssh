@@ -31,19 +31,19 @@ module SSH
     # @param [ String ] github  The URL to the git repository.
     #
     # @return [ Void ]
-    def self.add_source(name, archive:, github:)
-      (@@archives ||= {})[name] = archive
-      (@@repos ||= {})[name] = github
+    def self.add_source(name, archive: nil, github: nil)
+      (@@archives ||= {})[name] = archive if archive
+      (@@repos    ||= {})[name] = github  if github
     end
 
     add_source :mbedtls, archive: 'https://tls.mbed.org/download/mbedtls-%s-apache.tgz',
-                         github: 'ARMmbed/mbedtls'
+                         github: 'ARMmbed/mbedtls#master'
 
     add_source :libssh2, archive: 'https://www.libssh2.org/download/libssh2-%s.tar.gz',
-                         github: 'libssh2/libssh2'
+                         github: 'libssh2/libssh2#master'
 
     add_source :zlib, archive: 'http://zlib.net/zlib-%s.tar.gz',
-                      github: 'madler/zlib'
+                      github: 'madler/zlib#master'
 
     include Rake::FileUtilsExt
 
@@ -77,9 +77,11 @@ module SSH
     # @param [ String ] repo The name of the github repo.
     #
     # @return [ Void ]
-    def git_clone(repo)
-      folder = repo.split('/')[-1]
-      sh "git clone --depth 1 git://github.com/#{repo}.git #{@dir}/#{folder}"
+    def git_clone(repo_with_branch)
+      repo, branch = repo_with_branch.split('#')
+      folder       = repo.split('/')[-1]
+
+      sh "git clone --depth 1 -b #{branch} git://github.com/#{repo}.git #{@dir}/#{folder}"
     end
 
     # Downloads the archive and extracts it.
@@ -89,7 +91,9 @@ module SSH
     # @return [ Void ]
     def curl(url)
       folder = url.scan(/[a-z0-9]+(?=-)/)[0]
+
       sh "curl -s --fail --retry 3 --retry-delay 1 #{url} | tar xzC ."
+
       Dir["#{folder}-*"].each { |path| mv path, "#{@dir}/#{folder}" }
     end
   end
