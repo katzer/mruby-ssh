@@ -36,6 +36,8 @@
 
 #include <libssh2.h>
 
+#define SYM(name, len) mrb_intern_static(mrb, name, len)
+
 #if MRUBY_RELEASE_NO < 10400
 static inline mrb_int
 mrb_str_index(mrb_state *mrb, mrb_value str, const char *lit, mrb_int len, mrb_int off)
@@ -45,16 +47,12 @@ mrb_str_index(mrb_state *mrb, mrb_value str, const char *lit, mrb_int len, mrb_i
 }
 #endif
 
-static mrb_sym SYM_ID;
-static mrb_sym SYM_BUF;
-static mrb_value KEY_CHOMP;
-
 static int MAX_READ_SIZE = 0x4000;
 
 static inline int
 mrb_ssh_stream_id (mrb_state *mrb, mrb_value self)
 {
-    return (int) mrb_fixnum(mrb_attr_get(mrb, self, SYM_ID));
+    return (int) mrb_fixnum(mrb_attr_get(mrb, self, SYM("@id", 3)));
 }
 
 static mrb_value
@@ -69,8 +67,8 @@ mrb_ssh_f_init (mrb_state *mrb, mrb_value self)
         mrb_raise(mrb, E_SSH_ERROR, "Channel not opened.");
     }
 
-    mrb_iv_set(mrb, self, SYM_ID, mrb_fixnum_value(stream));
-    mrb_iv_set(mrb, self, mrb_intern_static(mrb, "@channel", 8), channel);
+    mrb_iv_set(mrb, self, SYM("@id", 3), mrb_fixnum_value(stream));
+    mrb_iv_set(mrb, self, SYM("@channel", 8), channel);
 
     DATA_PTR(self) = DATA_PTR(channel);
 
@@ -84,7 +82,7 @@ mrb_ssh_f_gets (mrb_state *mrb, mrb_value self)
     int stream              = mrb_ssh_stream_id(mrb, self);
     mrb_ssh_t *ssh          = mrb_ssh_session(mrb, self);
     mrb_ssh_channel_t *data = mrb_ssh_channel_bang(mrb, self);
-    mrb_value buf           = mrb_attr_get(mrb, self, SYM_BUF);
+    mrb_value buf           = mrb_attr_get(mrb, self, SYM("buf", 3));
     mrb_bool arg_given      = FALSE;
     mrb_bool opts_given     = FALSE;
     mrb_bool mem_size_given = FALSE;
@@ -98,7 +96,7 @@ mrb_ssh_f_gets (mrb_state *mrb, mrb_value self)
     mrb_get_args(mrb, "|o?H!?", &arg, &arg_given, &opts, &opts_given);
 
     if (opts_given && mrb_hash_p(opts)) {
-        chomp = mrb_type(mrb_hash_get(mrb, opts, KEY_CHOMP)) == MRB_TT_TRUE;
+        chomp = mrb_type(mrb_hash_get(mrb, opts, mrb_symbol_value(SYM("chomp", 5)))) == MRB_TT_TRUE;
     }
 
     if (mrb_string_p(arg)) {
@@ -108,7 +106,7 @@ mrb_ssh_f_gets (mrb_state *mrb, mrb_value self)
     if (mrb_hash_p(arg)) {
         sep     = "\n";
         sep_len = 1;
-        chomp   = mrb_type(mrb_hash_get(mrb, arg, KEY_CHOMP)) == MRB_TT_TRUE;
+        chomp   = mrb_type(mrb_hash_get(mrb, arg, mrb_symbol_value(SYM("chomp", 5)))) == MRB_TT_TRUE;
     } else
     if (arg_given && mrb_fixnum_p(arg)) {
         mem_size       = (int)mrb_fixnum(arg);
@@ -145,7 +143,7 @@ mrb_ssh_f_gets (mrb_state *mrb, mrb_value self)
     };
 
     if (rc <= 0) {
-        mrb_iv_remove(mrb, self, SYM_BUF);
+        mrb_iv_remove(mrb, self, SYM("buf", 3));
         res = buf;
         goto chomp;
     }
@@ -160,7 +158,7 @@ mrb_ssh_f_gets (mrb_state *mrb, mrb_value self)
         goto read;
 
     if (!sep) {
-        mrb_iv_remove(mrb, self, SYM_BUF);
+        mrb_iv_remove(mrb, self, SYM("buf", 3));
         res = buf;
         goto chomp;
     }
@@ -174,7 +172,7 @@ mrb_ssh_f_gets (mrb_state *mrb, mrb_value self)
     res = mrb_str_new(mrb, RSTRING_PTR(buf), pos);
     buf = mrb_str_substr(mrb, buf, pos, RSTRING_LEN(buf) - pos);
 
-    mrb_iv_set(mrb, self, SYM_BUF, buf);
+    mrb_iv_set(mrb, self, SYM("buf", 3), buf);
 
   chomp:
 
@@ -228,7 +226,7 @@ mrb_ssh_f_flush (mrb_state *mrb, mrb_value self)
         mrb_ssh_wait_socket(ssh);
     }
 
-    mrb_iv_set(mrb, self, SYM_BUF, mrb_nil_value());
+    mrb_iv_set(mrb, self, SYM("buf", 3), mrb_nil_value());
 
     return mrb_fixnum_value(rc);
 }
@@ -240,10 +238,6 @@ mrb_mruby_ssh_stream_init (mrb_state *mrb)
 
     ssh = mrb_module_get(mrb, "SSH");
     cls = mrb_define_class_under(mrb, ssh, "Stream", mrb->object_class);
-
-    SYM_ID    = mrb_intern_static(mrb, "@id", 3);
-    SYM_BUF   = mrb_intern_static(mrb, "buf", 3);
-    KEY_CHOMP = mrb_symbol_value(mrb_intern_static(mrb, "chomp", 5));
 
     mrb_define_method(mrb, cls, "initialize", mrb_ssh_f_init,  MRB_ARGS_ARG(1,1));
     mrb_define_method(mrb, cls, "gets",       mrb_ssh_f_gets,  MRB_ARGS_OPT(2));

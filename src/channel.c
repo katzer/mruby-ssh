@@ -35,13 +35,7 @@
 
 #include <libssh2.h>
 
-static mrb_sym SYM_SESSION;
-static mrb_sym SYM_TYPE;
-static mrb_sym SYM_WIN_SIZE;
-static mrb_sym SYM_PKG_SIZE;
-static mrb_sym SYM_EXITSTATUS;
-static mrb_value KEY_CHOMP;
-static mrb_value KEY_STREAM;
+#define SYM(name, len) mrb_intern_static(mrb, name, len)
 
 static int
 mrb_ssh_channel_free3 (mrb_state *mrb, void *p, mrb_bool wait)
@@ -126,7 +120,7 @@ mrb_ssh_f_open (mrb_state *mrb, mrb_value self)
 
     mrb_get_args(mrb, "|s!", &msg, &msg_len);
 
-    session = mrb_attr_get(mrb, self, SYM_SESSION);
+    session = mrb_attr_get(mrb, self, SYM("@session", 8));
     ssh     = DATA_PTR(session);
 
     if (!(ssh && mrb_ssh_initialized())) {
@@ -137,9 +131,9 @@ mrb_ssh_f_open (mrb_state *mrb, mrb_value self)
         mrb_raise(mrb, E_SSH_NOT_AUTH_ERROR, "SSH session not authenticated.");
     }
 
-    win_size = mrb_fixnum(mrb_attr_get(mrb, self, SYM_WIN_SIZE));
-    pkg_size = mrb_fixnum(mrb_attr_get(mrb, self, SYM_PKG_SIZE));
-    type     = mrb_attr_get(mrb, self, SYM_TYPE);
+    win_size = mrb_fixnum(mrb_attr_get(mrb, self, SYM("@local_maximum_window_size", 26)));
+    pkg_size = mrb_fixnum(mrb_attr_get(mrb, self, SYM("@local_maximum_packet_size", 26)));
+    type     = mrb_attr_get(mrb, self, SYM("@type", 5));
     ctype    = mrb_string_value_ptr(mrb, type);
     type_len = mrb_string_value_len(mrb, type);
 
@@ -160,7 +154,7 @@ mrb_ssh_f_open (mrb_state *mrb, mrb_value self)
     data->channel = channel;
 
     mrb_data_init(self, data, &mrb_ssh_channel_type);
-    mrb_iv_set(mrb, self, SYM_EXITSTATUS, mrb_nil_value());
+    mrb_iv_set(mrb, self, SYM("@exitstatus", 11), mrb_nil_value());
 
     return mrb_nil_value();
 }
@@ -217,12 +211,12 @@ mrb_ssh_f_pty (mrb_state *mrb, mrb_value self)
     }
 
     if (mrb_hash_p(opts)) {
-        mod       = mrb_hash_get(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "modes")));
-        terminal  = mrb_hash_get(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "term")));
-        width     = (int) mrb_fixnum(mrb_hash_fetch(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "chars_wide")), mrb_fixnum_value(LIBSSH2_TERM_WIDTH)));
-        height    = (int) mrb_fixnum(mrb_hash_fetch(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "chars_high")), mrb_fixnum_value(LIBSSH2_TERM_HEIGHT)));
-        width_px  = (int) mrb_fixnum(mrb_hash_fetch(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "pixels_wide")), mrb_fixnum_value(LIBSSH2_TERM_WIDTH_PX)));
-        height_px = (int) mrb_fixnum(mrb_hash_fetch(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "pixels_high")), mrb_fixnum_value(LIBSSH2_TERM_HEIGHT_PX)));
+        mod       = mrb_hash_get(mrb, opts, mrb_symbol_value(SYM("modes", 5)));
+        terminal  = mrb_hash_get(mrb, opts, mrb_symbol_value(SYM("term", 4)));
+        width     = (int) mrb_fixnum(mrb_hash_fetch(mrb, opts, mrb_symbol_value(SYM("chars_wide", 10)),  mrb_fixnum_value(LIBSSH2_TERM_WIDTH)));
+        height    = (int) mrb_fixnum(mrb_hash_fetch(mrb, opts, mrb_symbol_value(SYM("chars_high", 10)),  mrb_fixnum_value(LIBSSH2_TERM_HEIGHT)));
+        width_px  = (int) mrb_fixnum(mrb_hash_fetch(mrb, opts, mrb_symbol_value(SYM("pixels_wide", 11)), mrb_fixnum_value(LIBSSH2_TERM_WIDTH_PX)));
+        height_px = (int) mrb_fixnum(mrb_hash_fetch(mrb, opts, mrb_symbol_value(SYM("pixels_high", 11)), mrb_fixnum_value(LIBSSH2_TERM_HEIGHT_PX)));
     }
 
     if (mrb_test(mod)) {
@@ -330,9 +324,9 @@ mrb_ssh_f_close (mrb_state *mrb, mrb_value self)
     DATA_PTR(self)  = NULL;
     DATA_TYPE(self) = NULL;
 
-    mrb_iv_set(mrb, self, SYM_EXITSTATUS, mrb_fixnum_value(rc));
+    mrb_iv_set(mrb, self, SYM("@exitstatus", 11), mrb_fixnum_value(rc));
 
-    return mrb_attr_get(mrb, self, SYM_EXITSTATUS);
+    return mrb_attr_get(mrb, self, SYM("@exitstatus", 11));
 }
 
 static mrb_value
@@ -355,14 +349,6 @@ mrb_mruby_ssh_channel_init (mrb_state *mrb)
     cls = mrb_define_class_under(mrb, ssh, "Channel", mrb->object_class);
 
     MRB_SET_INSTANCE_TT(cls, MRB_TT_DATA);
-
-    SYM_SESSION    = mrb_intern_static(mrb, "@session", 8);
-    SYM_TYPE       = mrb_intern_static(mrb, "@type", 5);
-    SYM_EXITSTATUS = mrb_intern_static(mrb, "@exitstatus", 11);
-    SYM_PKG_SIZE   = mrb_intern_static(mrb, "@local_maximum_packet_size", 26);
-    SYM_WIN_SIZE   = mrb_intern_static(mrb, "@local_maximum_window_size", 26);
-    KEY_CHOMP      = mrb_symbol_value(mrb_intern_static(mrb, "chomp", 5));
-    KEY_STREAM     = mrb_symbol_value(mrb_intern_static(mrb, "stream", 6));
 
     mrb_define_method(mrb, cls, "open",    mrb_ssh_f_open,    MRB_ARGS_OPT(1));
     mrb_define_method(mrb, cls, "request", mrb_ssh_f_request, MRB_ARGS_ARG(1,1));
