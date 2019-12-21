@@ -139,7 +139,7 @@ mrb_ssh_f_gets (mrb_state *mrb, mrb_value self)
   read:
 
     while ((rc = libssh2_channel_read_ex(data->channel, stream, mem, mem_size)) == LIBSSH2_ERROR_EAGAIN) {
-        mrb_ssh_wait_socket(ssh);
+        mrb_ssh_wait_sock(ssh);
     };
 
     if (rc <= 0) {
@@ -205,7 +205,7 @@ mrb_ssh_f_write (mrb_state *mrb, mrb_value self)
     mrb_get_args(mrb, "s", &buf, &buf_len);
 
     while ((rc = libssh2_channel_write_ex(data->channel, stream, buf, (size_t)buf_len)) == LIBSSH2_ERROR_EAGAIN) {
-        mrb_ssh_wait_socket(ssh);
+        mrb_ssh_wait_sock(ssh);
     }
 
     if (rc < 0) {
@@ -223,7 +223,7 @@ mrb_ssh_f_flush (mrb_state *mrb, mrb_value self)
     mrb_ssh_channel_t *data = mrb_ssh_channel_bang(mrb, self);
 
     while ((rc = libssh2_channel_flush_ex(data->channel, stream)) == LIBSSH2_ERROR_EAGAIN) {
-        mrb_ssh_wait_socket(ssh);
+        mrb_ssh_wait_sock(ssh);
     }
 
     mrb_iv_set(mrb, self, SYM("buf", 3), mrb_nil_value());

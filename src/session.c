@@ -64,25 +64,27 @@ mrb_ssh_session_free(mrb_state *mrb, void *p)
 
     ssh = (mrb_ssh_t *)p;
 
-    if (mrb_ssh_initialized()) {
-        while (libssh2_session_disconnect(ssh->session, NULL) == LIBSSH2_ERROR_EAGAIN) {
-            mrb_ssh_wait_socket(ssh);
-        };
+    if (mrb_ssh_initialized())
+        goto cleanup;
 
-        while (libssh2_session_free(ssh->session) == LIBSSH2_ERROR_EAGAIN) {
-            mrb_ssh_wait_socket(ssh);
-        };
+    while (libssh2_session_disconnect(ssh->session, NULL) == LIBSSH2_ERROR_EAGAIN) {
+        mrb_ssh_wait_sock(ssh);
     }
 
-    mrb_ssh_close_socket((int)ssh->sock);
+    while (libssh2_session_free(ssh->session) == LIBSSH2_ERROR_EAGAIN) {
+        mrb_ssh_wait_sock(ssh);
+    }
 
+cleanup:
+
+    mrb_ssh_close_socket((int)ssh->sock);
     mrb_free(mrb, ssh);
 }
 
 static mrb_data_type const mrb_ssh_session_type = { "SSH::Session", mrb_ssh_session_free };
 
 int
-mrb_ssh_wait_socket (mrb_ssh_t *ssh)
+mrb_ssh_wait_sock (mrb_ssh_t *ssh)
 {
     struct timeval timeout;
     fd_set fd, *write_fd = NULL, *read_fd = NULL;
@@ -385,7 +387,6 @@ mrb_ssh_f_timeout_p (mrb_state *mrb, mrb_value self)
     mrb_ssh_raise_unless_connected(mrb, ssh);
 
     mrb_get_args(mrb, "i", &timeout);
-
     libssh2_session_set_timeout(ssh->session, (long)timeout);
 
     return mrb_nil_value();
@@ -450,7 +451,6 @@ mrb_ssh_f_userauth_list (mrb_state *mrb, mrb_value self)
     mrb_ssh_raise_unless_connected(mrb, ssh);
 
     mrb_get_args(mrb, "s", &user, &user_len);
-
     authlist = libssh2_userauth_list(ssh->session, user, (unsigned int)user_len);
 
     return mrb_str_new_cstr(mrb, authlist);

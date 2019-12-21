@@ -53,9 +53,9 @@ mrb_ssh_channel_free3 (mrb_state *mrb, void *p, mrb_bool wait)
 
     if (channel && ssh && mrb_ssh_initialized()) {
         if (wait == TRUE) {
-            while (libssh2_channel_close(channel)       == LIBSSH2_ERROR_EAGAIN) { mrb_ssh_wait_socket(ssh); }
-            while (libssh2_channel_wait_eof(channel)    == LIBSSH2_ERROR_EAGAIN) { mrb_ssh_wait_socket(ssh); }
-            while (libssh2_channel_wait_closed(channel) == LIBSSH2_ERROR_EAGAIN) { mrb_ssh_wait_socket(ssh); }
+            while (libssh2_channel_close(channel)       == LIBSSH2_ERROR_EAGAIN) { mrb_ssh_wait_sock(ssh); }
+            while (libssh2_channel_wait_eof(channel)    == LIBSSH2_ERROR_EAGAIN) { mrb_ssh_wait_sock(ssh); }
+            while (libssh2_channel_wait_closed(channel) == LIBSSH2_ERROR_EAGAIN) { mrb_ssh_wait_sock(ssh); }
         } else {
             libssh2_channel_close(channel);
         }
@@ -143,7 +143,7 @@ mrb_ssh_f_open (mrb_state *mrb, mrb_value self)
         if (channel) break;
 
         if (libssh2_session_last_errno(ssh->session) == LIBSSH2_ERROR_EAGAIN) {
-            mrb_ssh_wait_socket(ssh);
+            mrb_ssh_wait_sock(ssh);
         } else {
             mrb_ssh_raise_last_error(mrb, ssh);
         }
@@ -172,11 +172,11 @@ mrb_ssh_f_request (mrb_state *mrb, mrb_value self)
     mrb_get_args(mrb, "s|s!i", &req, &req_len, &msg, &msg_len, &ext_data);
 
     while (libssh2_channel_handle_extended_data2(data->channel, (int)ext_data) == LIBSSH2_ERROR_EAGAIN) {
-        mrb_ssh_wait_socket(ssh);
+        mrb_ssh_wait_sock(ssh);
     }
 
     while ((rc = libssh2_channel_process_startup(data->channel, req, (unsigned int)req_len, msg, (unsigned int)msg_len)) == LIBSSH2_ERROR_EAGAIN) {
-        mrb_ssh_wait_socket(ssh);
+        mrb_ssh_wait_sock(ssh);
     }
 
     if (rc != 0) {
@@ -207,7 +207,7 @@ mrb_ssh_f_pty (mrb_state *mrb, mrb_value self)
     mrb_get_args(mrb, "|H!", &opts);
 
     while (libssh2_channel_handle_extended_data2(data->channel, LIBSSH2_CHANNEL_EXTENDED_DATA_NORMAL) == LIBSSH2_ERROR_EAGAIN) {
-        mrb_ssh_wait_socket(ssh);
+        mrb_ssh_wait_sock(ssh);
     }
 
     if (mrb_hash_p(opts)) {
@@ -230,7 +230,7 @@ mrb_ssh_f_pty (mrb_state *mrb, mrb_value self)
     }
 
     while ((rc = libssh2_channel_request_pty_ex(data->channel, term, term_len, modes, modes_len, width, height, width_px, height_px)) == LIBSSH2_ERROR_EAGAIN) {
-        mrb_ssh_wait_socket(ssh);
+        mrb_ssh_wait_sock(ssh);
     }
 
     if (rc != 0) {
@@ -252,7 +252,7 @@ mrb_ssh_f_env (mrb_state *mrb, mrb_value self)
     mrb_get_args(mrb, "ss", &env, &env_len, &val, &val_len);
 
     while ((rc = libssh2_channel_setenv_ex(data->channel, env, (unsigned int)env_len, val, (unsigned int)val_len)) == LIBSSH2_ERROR_EAGAIN) {
-        mrb_ssh_wait_socket(ssh);
+        mrb_ssh_wait_sock(ssh);
     }
 
     if (rc != 0) {
@@ -273,7 +273,7 @@ mrb_ssh_f_set_eof (mrb_state *mrb, mrb_value self)
     mrb_get_args(mrb, "|b", &wait_eof);
 
     while ((rc = libssh2_channel_send_eof(data->channel)) == LIBSSH2_ERROR_EAGAIN) {
-        mrb_ssh_wait_socket(ssh);
+        mrb_ssh_wait_sock(ssh);
     }
 
     if (rc != 0) {
@@ -283,7 +283,7 @@ mrb_ssh_f_set_eof (mrb_state *mrb, mrb_value self)
     if (wait_eof == FALSE) return mrb_nil_value();
 
     while ((rc = libssh2_channel_wait_eof(data->channel)) == LIBSSH2_ERROR_EAGAIN) {
-        mrb_ssh_wait_socket(ssh);
+        mrb_ssh_wait_sock(ssh);
     }
 
     if (rc != 0) {

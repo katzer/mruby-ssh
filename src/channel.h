@@ -30,13 +30,11 @@
 
 MRB_BEGIN_DECL
 
-struct mrb_ssh_channel
+typedef struct mrb_ssh_channel
 {
     struct RData *session;
     LIBSSH2_CHANNEL *channel;
-};
-
-typedef struct mrb_ssh_channel mrb_ssh_channel_t;
+} mrb_ssh_channel_t;
 
 void mrb_mruby_ssh_channel_init (mrb_state *mrb);
 
