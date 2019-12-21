@@ -22,6 +22,8 @@
 
 language: c
 
+dist: bionic
+
 compiler:
 - gcc
 - clang
