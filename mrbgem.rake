@@ -40,7 +40,7 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   end
 
   file "#{dir}/mbedtls" do
-    download mbedtls: ENV.fetch('MBETTLS_VERSION', '2.16.2')
+    download mbedtls: ENV.fetch('MBETTLS_VERSION', '2.16.4')
   end
 
   task "#{build.name}:mbedtls" => "#{dir}/mbedtls" do
