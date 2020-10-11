@@ -92,7 +92,7 @@ module SSH
     def curl(url)
       folder = url.scan(/[a-z0-9]+(?=-)/)[0]
 
-      sh "curl -s --fail --retry 3 --retry-delay 1 #{url} | tar xzC ."
+      sh "curl -L --fail --retry 3 --retry-delay 1 #{url} -s -o - | tar zxf -"
 
       Dir["#{folder}-*"].each { |path| mv path, "#{@dir}/#{folder}" }
     end
