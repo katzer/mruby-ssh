@@ -36,7 +36,7 @@ module SSH
       (@@repos    ||= {})[name] = github  if github
     end
 
-    add_source :mbedtls, archive: 'https://tls.mbed.org/download/mbedtls-%s-apache.tgz',
+    add_source :mbedtls, archive: 'https://github.com/ARMmbed/mbedtls/archive/v%s.tar.gz',
                          github: ENV.fetch('MBETTLS_SOURCE', 'ARMmbed/mbedtls#master')
 
     add_source :libssh2, archive: 'https://www.libssh2.org/download/libssh2-%s.tar.gz',
@@ -64,9 +64,9 @@ module SSH
     # @return [ Void ]
     def download(name, version = 'head')
       if version == 'head'
-        git_clone @@repos[name]
+        git_clone name, @@repos[name]
       else
-        curl format(@@archives[name], version)
+        curl name, format(@@archives[name], version)
       end
     end
 
@@ -74,27 +74,27 @@ module SSH
 
     # Clones the git repo.
     #
+    # @param [ Symbol ] name The name of the dependency.
     # @param [ String ] repo The name of the github repo.
     #
     # @return [ Void ]
-    def git_clone(repo_with_branch)
+    def git_clone(name, repo_with_branch)
       repo, branch = repo_with_branch.split('#')
-      folder       = repo.split('/')[-1]
+      dir          = "#{@dir}/#{name}"
 
-      sh "git clone --depth 1 -b #{branch} git://github.com/#{repo}.git #{@dir}/#{folder}"
+      sh "git clone --depth 1 -b #{branch} git://github.com/#{repo}.git #{dir}"
     end
 
     # Downloads the archive and extracts it.
     #
-    # @param [ String ] url A HTTP URI.
+    # @param [ Symbol ] name The name of the dependency.
+    # @param [ String ] url  A HTTP URI.
     #
     # @return [ Void ]
-    def curl(url)
-      folder = url.scan(/[a-z0-9]+(?=-)/)[0]
-
+    def curl(name, url)
       sh "curl -L --fail --retry 3 --retry-delay 1 #{url} -s -o - | tar zxf -"
 
-      Dir["#{folder}-*"].each { |path| mv path, "#{@dir}/#{folder}" }
+      Dir["#{name}-*"].each { |path| mv path, "#{@dir}/#{name}" }
     end
   end
 end
