@@ -29,6 +29,8 @@
 /* Enable debugging and activate tracing */
 #ifdef MRB_SSH_DEBUG
 # define LIBSSH2DEBUG 1
+#else
+# define LIBSSH2DEBUG 0
 #endif
 
 /* Define to 1 if you have the <inttypes.h> header file. */
