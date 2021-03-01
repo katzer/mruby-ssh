@@ -54,3 +54,4 @@ build-iPhoneSimulator/
 /libssh2
 /mbedtls
 /zlib
+build_config.rb.lock
