@@ -22,7 +22,6 @@
 
 require_relative 'lib/mruby/build'
 require_relative 'lib/mruby/specification'
-
 require_relative 'lib/ssh/downloader'
 
 MRuby::Gem::Specification.new('mruby-ssh') do |spec|
