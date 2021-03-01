@@ -237,6 +237,7 @@ kbd_func (const char *name, int name_len, const char *inst, int inst_len,
 static mrb_value
 mrb_ssh_f_connect (mrb_state *mrb, mrb_value self)
 {
+    mrb_bool opts_given = FALSE;
     mrb_int host_len;
     char* host;
     mrb_value opts;
@@ -251,9 +252,9 @@ mrb_ssh_f_connect (mrb_state *mrb, mrb_value self)
         mrb_raise(mrb, E_SSH_ERROR, "SSH session already connected.");
     }
 
-    mrb_get_args(mrb, "s|H!", &host, &host_len, &opts);
+    mrb_get_args(mrb, "s|H?", &host, &host_len, &opts, &opts_given);
 
-    if (mrb_hash_p(opts)) {
+    if (opts_given && mrb_hash_p(opts)) {
         port     = (int) mrb_fixnum(mrb_hash_fetch(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "port")), mrb_fixnum_value(port)));
         timeout  = (long)mrb_fixnum(mrb_hash_fetch(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "timeout")), mrb_fixnum_value(timeout)));
         blocking = mrb_type(mrb_hash_fetch(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "block")), mrb_true_value())) == MRB_TT_TRUE;

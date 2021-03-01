@@ -26,6 +26,8 @@ MRuby::Build.new do |conf|
   conf.enable_debug
   conf.enable_test
 
+  conf.build_mrbc_exec
+
   conf.gem __dir__
 end
 
