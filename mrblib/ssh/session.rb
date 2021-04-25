@@ -45,7 +45,7 @@ module SSH
       SSH.startup
       connect(host, opts)
 
-      __login__(opts)
+      login(opts[:user], opts) if opts.include? :user
     end
 
     # The hostname specified when calling 'connect'.
@@ -86,28 +86,6 @@ module SSH
       @properties[key] = value
     end
 
-    # Authenticate the SSH session without any interactive prompts
-    # if the password is nil.
-    #
-    # @param [ String ] user The username to login.
-    # @param [ String ] pass Optional password.
-    #
-    # @return [ Void ]
-    def login_without_password_prompt(user, pass = nil)
-      login(user, pass, false)
-    end
-
-    # Authenticate the SSH session with public/private key pair.
-    #
-    # @param [ String ] user   The username to login.
-    # @param [ String ] key    The path of the private key.
-    # @param [ String ] phrase Optional passphrase for the key.
-    #
-    # @return [ Void ]
-    def login_with_public_key(user, key, phrase = nil)
-      login(user, key, nil, true, phrase)
-    end
-
     # List of supported authentication methods.
     #
     # @param [ String ] user Username which will be used while authenticating.
@@ -127,23 +105,6 @@ module SSH
     # @return [ Boolean ]
     def userauth_method_supported?(user, method)
       userauth_methods(user).include? method
-    end
-
-    private
-
-    # Do the login after connect.
-    #
-    # @param [ Hash<Symbol, String> ] opts See SSH::Session#initialize
-    #
-    # @return [ Void ]
-    def __login__(opts)
-      return unless opts[:user]
-
-      if opts[:key]
-        login(opts[:user], opts[:key], nil, true, opts[:passphrase])
-      else
-        login(opts[:user], opts[:password], opts[:non_interactive] != true)
-      end
     end
   end
 end

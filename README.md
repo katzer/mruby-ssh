@@ -55,7 +55,15 @@ end
 Publickey:
 
 ```ruby
-SSH.start('test.rebex.net', 'demo', key: '~/.ssh/id_rsa') do |ssh|
+SSH.start('test.rebex.net', 'demo', key: '~/.ssh/id_rsa', passphrase: 'optional') do |ssh|
+  ssh # => SSH::Session
+end
+```
+
+Agent:
+
+```ruby
+SSH.start('test.rebex.net', 'demo', use_agent: true) do |ssh|
   ssh # => SSH::Session
 end
 ```

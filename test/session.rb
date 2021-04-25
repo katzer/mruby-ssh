@@ -87,13 +87,13 @@ assert 'SSH::Session#connect+login' do
   assert_true ssh.userauth_method_supported? 'demo', auth_methods[0]
   assert_false ssh.userauth_method_supported? 'demo', 'xyz'
 
-  assert_raise(SSH::AuthenticationFailed) { ssh.login('demo', 'false') }
+  assert_raise(SSH::AuthenticationFailed) { ssh.login('demo', password: '123') }
   assert_kind_of String,  ssh.last_error
   assert_kind_of Integer, ssh.last_errno
   assert_not_equal 0,     ssh.last_errno
   assert_false ssh.logged_in?
 
-  ssh.login 'demo', 'password'
+  ssh.login 'demo', password: 'password'
   assert_true ssh.logged_in?
 end
 
@@ -107,10 +107,10 @@ assert 'SSH::Session#timeout' do
 
   ssh.timeout = 1
   assert_equal 1, ssh.timeout
-  assert_raise(SSH::Timeout) { ssh.login 'demo', 'password' }
+  assert_raise(SSH::Timeout) { ssh.login 'demo', password: 'password' }
 
   begin
-    ssh.login 'demo', 'password'
+    ssh.login 'demo', password: 'password'
   rescue SSH::Timeout => e
     assert_equal ssh.last_error, e.message
     assert_equal ssh.last_errno, e.errno
@@ -118,7 +118,7 @@ assert 'SSH::Session#timeout' do
 
   ssh.timeout = 0
   assert_equal 0, ssh.timeout
-  ssh.login 'demo', 'password'
+  ssh.login 'demo', password: 'password'
   assert_true ssh.logged_in?
 end
 

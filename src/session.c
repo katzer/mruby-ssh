@@ -27,6 +27,7 @@
 #include "mruby/data.h"
 #include "mruby/hash.h"
 #include "mruby/class.h"
+#include "mruby/string.h"
 #include "mruby/ext/ssh.h"
 #include "mruby/variable.h"
 
@@ -44,6 +45,8 @@
 # include <netdb.h>
 # include <unistd.h>
 #endif
+
+#define SYM(name, len) mrb_symbol_value(mrb_intern_static(mrb, name, len))
 
 static inline void
 mrb_ssh_close_socket (libssh2_socket_t sock)
@@ -206,6 +209,54 @@ mrb_ssh_init_session (libssh2_socket_t sock, LIBSSH2_SESSION **ptr, int blocking
     return rc;
 }
 
+static int
+mrb_ssh_agent_userauth (LIBSSH2_SESSION *session, const char *user)
+{
+    int rc = 0;
+    LIBSSH2_AGENT *agent = NULL;
+    struct libssh2_agent_publickey *identity, *prev_identity = NULL;
+
+    agent = libssh2_agent_init(session);
+
+    if (!agent) {
+        return LIBSSH2_ERROR_ALLOC;
+    }
+
+    if ((rc = libssh2_agent_connect(agent)) < 0) {
+        goto cleanup;
+    }
+    if ((rc = libssh2_agent_list_identities(agent)) < 0) {
+        goto cleanup;
+    }
+
+    while (1) {
+        if ((rc = libssh2_agent_get_identity(agent, &identity, prev_identity)) < 0) {
+            goto cleanup;
+        }
+
+        if (rc == 1) {
+            rc = LIBSSH2_ERROR_AUTHENTICATION_FAILED;
+            goto cleanup;
+        }
+
+        if ((rc = libssh2_agent_userauth(agent, user, identity)) == 0) {
+            break;
+        }
+
+        prev_identity = identity;
+    }
+
+
+ cleanup:
+
+    if (agent) {
+        libssh2_agent_disconnect(agent);
+        libssh2_agent_free(agent);
+    }
+
+    return rc;
+}
+
 static inline void
 mrb_ssh_raise_unless_connected (mrb_state *mrb, mrb_ssh_t *ssh)
 {
@@ -305,34 +356,65 @@ mrb_ssh_f_closed (mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_ssh_f_login (mrb_state *mrb, mrb_value self)
 {
-    mrb_bool pass_given, pass_is_key = FALSE, prompt = TRUE;
-    mrb_int user_len = 0, pass_len = 0, phrase_len = 0;
-    const char *user, *pass, *phrase = NULL;
-    char *pubkey = NULL;
-    int ret;
+    mrb_bool opts_given = FALSE;
+    mrb_int user_len = 0;
+    const char *user;
+    mrb_value opts;
+    int rc = 0;
 
     mrb_ssh_t *ssh = DATA_PTR(self);
     mrb_ssh_raise_unless_connected(mrb, ssh);
 
-    mrb_get_args(mrb, "s|s!?bbs!", &user, &user_len, &pass, &pass_len, &pass_given, &prompt, &pass_is_key, &phrase, &phrase_len);
+    mrb_get_args(mrb, "s|H!?", &user, &user_len, &opts, &opts_given);
 
-    if (pass_is_key && pass_given) {
-        pubkey = (char *)mrb_malloc(mrb, sizeof(char) * (pass_len + 4 + 1));
-        strcpy(pubkey, pass);
-        strcat(pubkey, ".pub");
-    }
+    if (opts_given) {
+        if (mrb_true_p(mrb_hash_get(mrb, opts, SYM("use_agent", 9)))) {
+            rc = mrb_ssh_agent_userauth(ssh->session, user);
+        }
+        else if (mrb_hash_key_p(mrb, opts, SYM("key", 3)) == TRUE) {
+            mrb_value privkey = mrb_hash_get(mrb,opts, SYM("key", 3));
+            mrb_value phrase  = mrb_hash_get(mrb,opts, SYM("passphrase", 10));
 
-    if (pass_is_key) {
-        while ((ret = libssh2_userauth_publickey_fromfile_ex(ssh->session, user, (unsigned int)user_len, pubkey, pass, phrase)) == LIBSSH2_ERROR_EAGAIN);
-    } else if (!prompt || (pass_given && pass)) {
-        while ((ret = libssh2_userauth_password_ex(ssh->session, user, (unsigned int)user_len, pass, (unsigned int)pass_len, NULL)) == LIBSSH2_ERROR_EAGAIN);
+            char *pubkey = (char *)mrb_malloc(mrb, sizeof(char) * (RSTRING_LEN(privkey) + 4 + 1));
+            strcpy(pubkey, RSTRING_PTR(privkey));
+            strcat(pubkey, ".pub");
+
+            while ((rc =
+                    libssh2_userauth_publickey_fromfile_ex(ssh->session, user,
+                                                           (unsigned int)user_len,
+                                                           pubkey,
+                                                           (const char *)RSTRING_PTR(privkey),
+                                                           (const char *)RSTRING_PTR(phrase))
+                    ) == LIBSSH2_ERROR_EAGAIN);
+
+            mrb_free(mrb, pubkey);
+        }
+        else if (mrb_hash_key_p(mrb, opts, SYM("password", 8)) == TRUE) {
+            mrb_value pass = mrb_hash_get(mrb,opts, SYM("password", 8));
+
+            while ((rc =
+                    libssh2_userauth_password_ex(ssh->session, user,
+                                                 (unsigned int)user_len,
+                                                 (const char *)RSTRING_PTR(pass),
+                                                 (unsigned int)RSTRING_LEN(pass), NULL)
+                    ) == LIBSSH2_ERROR_EAGAIN);
+        }
+        else if (mrb_false_p(mrb_hash_get(mrb, opts, SYM("non_interactive", 15)))) {
+            while ((rc =
+                    libssh2_userauth_keyboard_interactive_ex(ssh->session, user,
+                                                             (unsigned int)user_len,
+                                                             &kbd_func)
+                    ) == LIBSSH2_ERROR_EAGAIN);
+        }
     } else {
-        while ((ret = libssh2_userauth_keyboard_interactive_ex(ssh->session, user, (unsigned int)user_len, &kbd_func)) == LIBSSH2_ERROR_EAGAIN);
+        while ((rc =
+                libssh2_userauth_keyboard_interactive_ex(ssh->session, user,
+                                                         (unsigned int)user_len,
+                                                         &kbd_func)
+                ) == LIBSSH2_ERROR_EAGAIN);
     }
 
-    mrb_free(mrb, pubkey);
-
-    switch (ret) {
+    switch (rc) {
         case LIBSSH2_ERROR_NONE:
             break;
         case LIBSSH2_ERROR_SOCKET_DISCONNECT:
@@ -470,7 +552,7 @@ mrb_mruby_ssh_session_init (mrb_state *mrb)
     mrb_define_method(mrb, cls, "connect",     mrb_ssh_f_connect, MRB_ARGS_ARG(1,1));
     mrb_define_method(mrb, cls, "close",       mrb_ssh_f_close,   MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "closed?",     mrb_ssh_f_closed,  MRB_ARGS_NONE());
-    mrb_define_method(mrb, cls, "login",       mrb_ssh_f_login,   MRB_ARGS_ARG(1,4));
+    mrb_define_method(mrb, cls, "login",       mrb_ssh_f_login,   MRB_ARGS_ARG(1,1));
     mrb_define_method(mrb, cls, "logged_in?",  mrb_ssh_f_logged,  MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "blocking?",   mrb_ssh_f_blocking,MRB_ARGS_NONE());
     mrb_define_method(mrb, cls, "timeout",     mrb_ssh_f_timeout, MRB_ARGS_NONE());
