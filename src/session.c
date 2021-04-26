@@ -371,9 +371,10 @@ mrb_ssh_f_login (mrb_state *mrb, mrb_value self)
         if (mrb_true_p(mrb_hash_get(mrb, opts, SYM("use_agent", 9)))) {
             rc = mrb_ssh_agent_userauth(ssh->session, user);
         }
-        else if (mrb_hash_key_p(mrb, opts, SYM("key", 3)) == TRUE) {
-            mrb_value privkey = mrb_hash_get(mrb,opts, SYM("key", 3));
-            mrb_value phrase  = mrb_hash_get(mrb,opts, SYM("passphrase", 10));
+        else if (mrb_hash_key_p(mrb, opts, SYM("key", 3))) {
+            mrb_value privkey   = mrb_hash_get(mrb,opts, SYM("key", 3));
+            mrb_value phrase    = mrb_hash_get(mrb,opts, SYM("passphrase", 10));
+            const char *sphrase = mrb_string_p(phrase) ? RSTRING_PTR(phrase) : NULL;
 
             char *pubkey = (char *)mrb_malloc(mrb, sizeof(char) * (RSTRING_LEN(privkey) + 4 + 1));
             strcpy(pubkey, RSTRING_PTR(privkey));
@@ -384,12 +385,12 @@ mrb_ssh_f_login (mrb_state *mrb, mrb_value self)
                                                            (unsigned int)user_len,
                                                            pubkey,
                                                            (const char *)RSTRING_PTR(privkey),
-                                                           (const char *)RSTRING_PTR(phrase))
+                                                           sphrase)
                     ) == LIBSSH2_ERROR_EAGAIN);
 
             mrb_free(mrb, pubkey);
         }
-        else if (mrb_hash_key_p(mrb, opts, SYM("password", 8)) == TRUE) {
+        else if (mrb_hash_key_p(mrb, opts, SYM("password", 8))) {
             mrb_value pass = mrb_hash_get(mrb,opts, SYM("password", 8));
 
             while ((rc =
