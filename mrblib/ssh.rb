@@ -31,8 +31,9 @@ module SSH
   #
   # @return [ Net::FTP ]
   def self.start(host = nil, user = nil, opts = {})
-    opts[:user] = user if user
-    session     = Session.new(host, opts)
+    cfg        = opts.dup
+    cfg[:user] = user if user
+    session    = Session.new(host, cfg)
 
     return session unless block_given?
 
