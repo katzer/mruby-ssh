@@ -82,7 +82,7 @@ module SSH
       repo, branch = repo_with_branch.split('#')
       dir          = "#{@dir}/#{name}"
 
-      sh "git clone --depth 1 -b #{branch} git://github.com/#{repo}.git #{dir}"
+      sh "git clone --depth 1 -b #{branch} https://github.com/#{repo}.git #{dir}"
     end
 
     # Downloads the archive and extracts it.
