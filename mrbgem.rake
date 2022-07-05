@@ -49,7 +49,7 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   end
 
   file "#{dir}/zlib" do
-    download zlib: ENV.fetch('ZLIB_VERSION', '1.2.11')
+    download zlib: ENV.fetch('ZLIB_VERSION', '1.2.12')
   end
 
   task "#{build.name}:zlib" => "#{dir}/zlib" do
