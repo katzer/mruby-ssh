@@ -42,7 +42,7 @@ module SSH
     add_source :libssh2, archive: 'https://www.libssh2.org/download/libssh2-%s.tar.gz',
                          github: ENV.fetch('LIBSSH2_SOURCE', 'libssh2/libssh2#master')
 
-    add_source :zlib, archive: 'http://zlib.net/zlib-%s.tar.gz',
+    add_source :zlib, archive: 'https://zlib.net/fossils/zlib-%s.tar.gz',
                       github: ENV.fetch('ZLIB_SOURCE', 'madler/zlib#master')
 
     include Rake::FileUtilsExt
