@@ -39,7 +39,7 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   end
 
   file "#{dir}/mbedtls" do
-    download mbedtls: ENV.fetch('MBEDTLS_VERSION', '2.28.0')
+    download mbedtls: ENV.fetch('MBEDTLS_VERSION', '2.28.1')
   end
 
   task "#{build.name}:mbedtls" => "#{dir}/mbedtls" do
@@ -49,7 +49,7 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   end
 
   file "#{dir}/zlib" do
-    download zlib: ENV.fetch('ZLIB_VERSION', '1.2.12')
+    download zlib: ENV.fetch('ZLIB_VERSION', '1.2.13')
   end
 
   task "#{build.name}:zlib" => "#{dir}/zlib" do
