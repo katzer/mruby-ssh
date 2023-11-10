@@ -65,6 +65,7 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   task "#{build.name}:libssh2" => "#{dir}/libssh2" do
     spec.export_include_paths << "#{dir}/libssh2/include"
     spec.cc.include_paths << "#{dir}/libssh2/include"
+    spec.cc.defines << 'HAVE_CONFIG_H'
     spec.objs += objfiles_relative_from_build_dir('libssh2/src/*.c')
   end
 
