@@ -58,7 +58,7 @@ MRuby::Gem::Specification.new('mruby-ssh') do |spec|
   end
 
   file "#{dir}/libssh2" do
-    download libssh2: ENV.fetch('LIBSSH2_VERSION', 'head')
+    download libssh2: ENV.fetch('LIBSSH2_VERSION', '1.11.0')
     cp "#{dir}/libssh2_config.h", "#{dir}/libssh2/src/"
   end
 
