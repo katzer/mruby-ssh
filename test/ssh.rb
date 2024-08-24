@@ -32,6 +32,8 @@ end
 assert 'SSH.shutdown' do
   assert_nothing_raised { SSH.shutdown }
   assert_false SSH.ready?
+ensure
+  assert_nothing_raised { SSH.startup }
 end
 
 assert 'SSH.start' do
