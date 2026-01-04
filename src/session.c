@@ -112,58 +112,29 @@ mrb_ssh_wait_sock (mrb_ssh_t *ssh)
     return rc;
 }
 
-static char *
-mrb_ssh_host_to_ip (int family, const char *host)
-{
-    struct addrinfo *res, *rp;
-    struct addrinfo hints;
-    static char ipname[INET6_ADDRSTRLEN];
-    void *addr;
-
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = family;
-
-    if (getaddrinfo(host, NULL, &hints, &res) != 0)
-        return NULL;
-
-    for (rp = res; rp != NULL; rp = rp->ai_next) {
-        if (rp->ai_family == AF_INET) {
-            addr = (&((struct sockaddr_in *)(rp->ai_addr))->sin_addr);
-        } else {
-            addr = (&((struct sockaddr_in6 *)(rp->ai_addr))->sin6_addr);
-        }
-
-        if (inet_ntop(rp->ai_family, addr, ipname, sizeof(ipname)) != NULL) {
-            freeaddrinfo(res);
-            return strdup(ipname);
-        }
-    }
-
-    freeaddrinfo(res);
-
-    return NULL;
-}
-
 static int
-mrb_ssh_init_socket (mrb_state *mrb, int family, const char *host, int port, libssh2_socket_t *ptr)
+mrb_ssh_init_socket (mrb_state *mrb, const char *host, int port, libssh2_socket_t *ptr)
 {
-    struct sockaddr_in sin;
+    struct addrinfo *addr, hints;
     libssh2_socket_t sock;
     int rc;
-    char *ip;
 
-    sock = socket(family, SOCK_STREAM, 0);
+    memset(&hints, 0, sizeof(hints));
 
-    sin.sin_family = family;
-    sin.sin_port   = htons(port);
-
-    if (!(ip = mrb_ssh_host_to_ip(family, host)))
+    if (getaddrinfo(host, NULL, &hints, &addr) != 0)
         return -1;
 
-    inet_pton(family, ip, &(sin.sin_addr));
-    mrb_free(mrb, ip);
+    sock = socket(addr->ai_family, SOCK_STREAM, 0);
 
-    rc = connect(sock, (struct sockaddr*)(&sin), sizeof(struct sockaddr_in));
+    if (addr->ai_family == AF_INET) {
+        ((struct sockaddr_in *)(addr->ai_addr))->sin_port = htons(port);
+        rc = connect(sock, addr->ai_addr, sizeof(struct sockaddr_in));
+    } else {
+        ((struct sockaddr_in6 *)(addr->ai_addr))->sin6_port = htons(port);
+        rc = connect(sock, addr->ai_addr, sizeof(struct sockaddr_in6));
+    }
+
+    freeaddrinfo(addr);
 
     if (rc != 0) return rc;
 
@@ -313,7 +284,7 @@ mrb_ssh_f_connect (mrb_state *mrb, mrb_value self)
         sigpipe  = mrb_type(mrb_hash_fetch(mrb, opts, mrb_symbol_value(mrb_intern_lit(mrb, "sigpipe")), mrb_false_value())) == MRB_TT_TRUE;
     }
 
-    if (mrb_ssh_init_socket(mrb, AF_INET, host, port, &sock) != 0) {
+    if (mrb_ssh_init_socket(mrb, host, port, &sock) != 0) {
         mrb_raise(mrb, E_SSH_CONNECT_ERROR, "Failed to connect.");
     }
 
